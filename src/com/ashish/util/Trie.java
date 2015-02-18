@@ -47,6 +47,7 @@ public abstract class Trie<T extends Node> implements Iterator<T> {
 		}
 	}
  
+	//FIXME: THis function needs to be fixed or removed.
 	private float calculateProbability(Node node) {
 		ArrayList<String> editWords = new ArrayList<String>();
 		ArrayList<String> words = new ArrayList<String>();

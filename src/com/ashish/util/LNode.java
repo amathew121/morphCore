@@ -4,7 +4,8 @@ class LNode extends Node {
 	boolean rootWord;
 	boolean endsWord;
 	char nodeChar;
-	float cutWordProbability;
+	double cutWordProbability;
+	private int numRootChildren = 0;
 
 	LNode() {
 	};
@@ -28,5 +29,13 @@ class LNode extends Node {
 
 	public char getNodeChar() {
 		return nodeChar;
+	}
+	
+	public int getNumRootChildren() {
+		return numRootChildren;
+	}
+
+	public void incNumRootChildren() {
+		numRootChildren++;
 	}
 }

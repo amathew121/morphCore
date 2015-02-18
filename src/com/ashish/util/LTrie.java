@@ -2,6 +2,7 @@ package com.ashish.util;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -33,6 +34,7 @@ public class LTrie extends Trie<LNode> {
 		current.endsWord = true;
 		if (isRootForm) {
 			((LNode) current).rootWord = true;
+			((LNode) current).incNumRootChildren();
 			// context.addMessage(null, new FacesMessage("Successful",
 			// "Added as Root Word" + str));
 
@@ -164,7 +166,7 @@ public class LTrie extends Trie<LNode> {
 		// "à´‰à´¤àµ�à´¤à´°à´¾à´«àµ�à´°à´¿à´•àµ�à´•à´¯à´¿àµ½ à´¨à´¿à´¨àµ�à´¨àµ�à´³àµ�à´³ à´²à´¤àµ�à´¤àµ€àµ» à´•àµ�à´°à´¿à´¸àµ�à´¤àµ€à´¯à´šà´¿à´¨àµ�à´¤à´•à´¨àµ�à´‚, à´¦àµˆà´µà´¶à´¾à´¸àµ�à´¤àµ�à´°à´œàµ�à´žà´¨àµ�à´‚ à´®àµ†à´¤àµ�à´°à´¾à´¨àµ�à´®à´¾à´¯à´¿à´°àµ�à´¨àµ�à´¨àµ� à´¹à´¿à´ªàµ�à´ªàµ‹à´¯à´¿à´²àµ† à´…à´—à´¸àµ�à´¤àµ€à´¨àµ‹à´¸àµ�. à´µà´¿à´¶àµ�à´¦àµ�à´§ à´…à´—à´¸àµ�à´±àµ�à´±à´¿àµ» (à´¸àµ†à´¯àµ�à´¨àµ�à´±àµ� à´…à´—à´¸àµ�à´±àµ�à´±à´¿àµ»), à´µà´¿à´¶àµ�à´¦àµ�à´§ à´“à´¸àµ�à´±àµ�à´±à´¿àµ», à´”à´±àµ‡à´²à´¿à´¯àµ�à´¸àµ� à´…à´—à´¸àµ�à´¤àµ€à´¨àµ‹à´¸àµ� à´Žà´¨àµ�à´¨àµ€ à´ªàµ‡à´°àµ�à´•à´³à´¿à´²àµ�à´‚ à´…à´¦àµ�à´¦àµ‡à´¹à´‚ à´…à´±à´¿à´¯à´ªàµ�à´ªàµ†à´Ÿàµ�à´¨àµ�à´¨àµ�. à´±àµ‹à´®àµ» à´•à´¤àµ�à´¤àµ‹à´²à´¿à´•àµ�à´•à´¾ à´¸à´­à´¯àµ�à´‚ à´†à´‚à´—àµ�à´²à´¿à´•àµ�à´•àµ» à´•àµ‚à´Ÿàµ�à´Ÿà´¾à´¯àµ�à´®à´¯àµ�à´‚ à´…à´—à´¸àµ�à´¤àµ€à´¨àµ‹à´¸à´¿à´¨àµ† à´µà´¿à´¶àµ�à´¦àµ�à´§à´¨àµ�à´‚ à´µàµ‡à´¦à´ªà´¾à´°à´‚à´—à´¤à´¨àµ�à´®à´¾à´°à´¿àµ½ à´®àµ�à´®àµ�à´ªà´¨àµ�à´‚ à´†à´¯à´¿ à´®à´¾à´¨à´¿à´•àµ�à´•àµ�à´¨àµ�à´¨àµ�. à´ªàµ�à´°àµŠà´Ÿàµ�à´Ÿà´¸àµ�à´±àµ�à´±à´¨àµ�à´±àµ� à´¨à´µàµ€à´•à´°à´£à´¤àµ�à´¤àµ† à´�à´±àµ�à´±à´µàµ�à´®àµ‡à´±àµ† à´¸àµ�à´µà´¾à´§àµ€à´¨à´¿à´šàµ�à´š à´¸à´­à´¾à´ªà´¿à´¤à´¾à´µàµ� à´…à´¦àµ�à´¦àµ‡à´¹à´®à´¾à´£àµ�. à´…à´—à´¸àµ�à´¤àµ€à´¨àµ‹à´¸à´¿à´¨àµ�à´±àµ† à´šà´¿à´¨àµ�à´¤à´¯àµ�à´‚, à´¤à´¤àµ�à´¤àµ�à´µà´šà´¿à´¨àµ�à´¤à´¯à´¿à´²àµ�à´‚ à´¦àµˆà´µà´¶à´¾à´¸àµ�à´¤àµ�à´°à´¤àµ�à´¤à´¿à´²àµ�à´‚ à´…à´¦àµ�à´¦àµ‡à´¹à´‚ à´°àµ‚à´ªà´ªàµ�à´ªàµ†à´Ÿàµ�à´¤àµ�à´¤à´¿à´¯ à´¨à´¿à´²à´ªà´¾à´Ÿàµ�à´•à´³àµ�à´‚ à´®à´¦àµ�à´§àµ�à´¯à´•à´¾à´² à´²àµ‹à´•à´µàµ€à´•àµ�à´·à´£à´¤àµ�à´¤àµ† à´…à´Ÿà´¿à´¸àµ�à´¥à´¾à´¨à´ªà´°à´®à´¾à´¯à´¿ à´¸àµ�à´µà´¾à´§àµ€à´¨à´¿à´šàµ�à´šàµ�. à´®à´¨àµ�à´·àµ�à´¯à´¸àµ�à´µà´¾à´¤à´¨àµ�à´¤àµ�à´°àµ�à´¯à´¤àµ�à´¤à´¿à´¨àµ�â€Œ à´¦àµˆà´µà´¤àµ�à´¤à´¿à´¨àµ�à´±àµ† à´•àµƒà´ª à´’à´´à´¿à´šàµ�à´šàµ�à´•àµ‚à´Ÿà´¾à´¤àµ�à´¤à´¤à´¾à´£àµ†à´¨àµ�à´¨àµ� à´…à´¦àµ�à´¦àµ‡à´¹à´‚ à´µà´¿à´¶àµ�à´µà´¸à´¿à´šàµ�à´šàµ�. à´¤àµ�à´Ÿà´™àµ�à´™à´¿à´¯ à´®à´¤, à´°à´¾à´·àµ�à´Ÿàµ�à´°àµ€à´¯ à´¸à´™àµ�à´•à´²àµ�à´ªà´™àµ�à´™àµ¾ à´•àµ�à´°àµˆà´¸àµ�à´¤à´µà´²àµ‹à´•à´¤àµ�à´¤à´¿à´¨àµ�â€Œ à´¸à´®àµ�à´®à´¾à´¨à´¿à´šàµ�à´šà´¤àµ� à´…à´—à´¸àµ�à´¤àµ€à´¨àµ‹à´¸à´¾à´£àµ�â€Œ";
 
 		//method1HeuristicCut(t);
-		t.method2RootWordCut();
+		t.method2RootWordCut(t);
 	}
 
 	public void initLexicon(String s)
@@ -178,13 +180,12 @@ public class LTrie extends Trie<LNode> {
 		}
 	}
 
-	private void method2RootWordCut() {
-		generateCutWordProbability();
-	}
-
-	private void generateCutWordProbability() {
-		
-		
+	private void method2RootWordCut(LTrie t) {
+		Iterator<LNode> iterator = null; //FIXME:
+		 while (iterator.hasNext()) {
+			 LNode temp = iterator.next();
+			 temp.cutWordProbability = getProbability(temp);
+		 }
 	}
 
 	private static void method1HeuristicCut(LTrie trie)
@@ -203,5 +204,30 @@ public class LTrie extends Trie<LNode> {
 		System.out.println(stemsAndAffixes.getStems());
 		System.out.println(stemsAndAffixes.getAffixes());
 	}
+	
+	private double getProbability(LNode n) {
+		int backstep=2;
+		Node current= null;
+		while(backstep-- > 0) {
+			Node prev = current;
+			current = n.getParent();
+			if (current == null) {
+				current = prev;
+				break;
+			}
+		}
+		return searchByLevel(current);
+		}
 
+	private double searchByLevel(Node n){
+		int level = 0;
+		int rootCount = 0;
+		int wordCount = 0;
+		while(level++ < 4) {
+			wordCount += n.getNumChildren();
+			rootCount += ((LNode) n).getNumRootChildren();
+		}
+		double probability = rootCount/wordCount;
+		return probability;
+		}
 }
