@@ -6,13 +6,14 @@ import java.util.EmptyStackException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public abstract class Trie<T extends Node> implements Iterator<T> {
 	static protected final int NUM_LETTERS = 128;
-	private static final int CUTWORD = 1;
 	T root;
 	private LinkedList<T> nodesToVisit;
-	private int mode;
+
+	static Logger logger = LogManager.getLogManager();
 
 	public Trie(T root) {
 		this.root = root;
@@ -25,9 +26,12 @@ public abstract class Trie<T extends Node> implements Iterator<T> {
 	}
 
 	static protected int toIndex(char letter)
-			throws UnsupportedEncodingException {
+			throws UnsupportedEncodingException, PunctuationException {
+		logger.info("Got letter to convert to index: " + letter + " having int value of " + (int) letter );
 		if ((letter - '\u0D00') > 0 && (letter - '\u0D00') < 128) {
 			return letter - '\u0D00';
+		} else if (letter == '\u200D') {
+			throw new PunctuationException("Zero Width Jointer");
 		} else {
 			throw new UnsupportedEncodingException(
 					"Only Malayalam Characters are supported. Given char is "
@@ -35,38 +39,25 @@ public abstract class Trie<T extends Node> implements Iterator<T> {
 		}
 	}
 
-	public void addChild(Node node, int index) {
+	/**
+	 * Returns the node at the index given, if the node does not exist, a new node is created and returned.
+	 * 
+	 * @param node
+	 * @param index
+	 * @return
+	 */
+	public Node addChild(Node node, int index) {
 		node.incOccurrences();
 		if (node.getNthChild(index) == null) {
-			node.setNthChild(node.newChild(node, toLetter(index)), index);
+			Node newChild = node.newChild(node, toLetter(index));
+			newChild.setLevel(node.getLevel()+1);
+			node.setNthChild(newChild, index);
 			node.incNumChildren();
 		}
-		if (mode == CUTWORD) {
-			LNode lnode = (LNode) node;
-			lnode.cutWordProbability = calculateProbability(node);
-		}
+		return node.getNthChild(index);
 	}
  
-	//FIXME: THis function needs to be fixed or removed.
-	private float calculateProbability(Node node) {
-		ArrayList<String> editWords = new ArrayList<String>();
-		ArrayList<String> words = new ArrayList<String>();
-		if (node.getNumChildren() < 2)
-			return 0.0f;
-		if (node.equals(root) || node.getParent().equals(root)
-				|| node.getParent().getParent().equals(root))
-			return 0.0f;
-		Node inflexNode = node.getParent().getParent();
-		NodeIterator<Node> iterator = new NodeIterator<Node>(inflexNode);
-		while (iterator.hasNextWord()) {
-			String word = iterator.nextWord();
-			words.add(word);
-		}
-		while (iterator.hasNextRootWord()) {
-			editWords.add(iterator.nextRootWord());
-		}
-		return 0.0f;
-	}
+
 
 	public abstract void add(String s) throws UnsupportedEncodingException;
 
@@ -95,11 +86,55 @@ public abstract class Trie<T extends Node> implements Iterator<T> {
 		}
 		return null;
 	}
-
+	
 	@Override
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
+}
+
+class DepthLimitedIterator<T extends Node> implements Iterator<T> {
+	static protected final int NUM_LETTERS = 128;
+	private T base;
+	private LinkedList<T> nodesToVisit;
+	private int depth = 0;
+
+	public DepthLimitedIterator(T node, int depth) {
+		super();
+		this.base = node;
+		this.depth = depth;
+		nodesToVisit = new LinkedList<T>();
+		nodesToVisit.addFirst(base);
+	}
+	
+	@Override
+	public boolean hasNext() {
+		if (!nodesToVisit.isEmpty())
+			return true;
+		return false;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public T next() {
+		if (hasNext()) {
+			T current = nodesToVisit.removeFirst();
+			if (current.getLevel() < depth) {
+				for (int i = 0; i < NUM_LETTERS; i++) {
+					T item;
+					if ((item = (T) current.getNthChild(i)) != null)
+						nodesToVisit.addFirst(item);
+				}
+			}
+			return current;
+		}
+		return null;
+	}
+
+	@Override
+	public void remove() {
+	}
+	
 }
 
 class NodeIterator<T extends Node> implements Iterator<T> {
@@ -107,18 +142,22 @@ class NodeIterator<T extends Node> implements Iterator<T> {
 	T base;
 	private LinkedList<T> nodesToVisit;
 	private boolean visiting = false;
-	private LinkedList<LNode> cutNodesToVisit;
+	private LinkedList<T> cutNodesToVisit;
 	private LinkedList<T> rootNodesToVisit;
+	private boolean firstTime = true;
 
+	static Logger logger = LogManager.getLogManager();
+	
 	public NodeIterator(T node) {
 		super();
 		this.base = node;
 		nodesToVisit = new LinkedList<T>();
-		cutNodesToVisit = new LinkedList<LNode>();
+		cutNodesToVisit = new LinkedList<T>();
 		rootNodesToVisit = new LinkedList<T>();
 		nodesToVisit.addFirst(base);
-		cutNodesToVisit.addFirst((LNode) base);
+		cutNodesToVisit.addFirst(base);
 		rootNodesToVisit.addFirst(base);
+		firstTime = true;
 
 	}
 
@@ -149,16 +188,36 @@ class NodeIterator<T extends Node> implements Iterator<T> {
 		}
 	}
 
-	public boolean hasNextCutWord() {
+	public boolean hasNextCutNode() {
 		if (base instanceof LNode) {
-			if (!cutNodesToVisit.isEmpty())
-				return true;
-			else {
-				visiting = false;
-				return false;
+			if(firstTime) {
+				firstTime = false;
+				findAllCutNodes();
 			}
-		} else
-			return false;
+			if(!cutNodesToVisit.isEmpty())
+				return true;
+			else
+				return false;						
+		}
+		return false;
+	}
+	
+	public T nextCutNode() {
+		return cutNodesToVisit.removeFirst();
+	}
+	
+	private void findAllCutNodes() {
+		cutNodesToVisit.removeFirst();
+		while (hasNext()) {
+			T current = next();
+			if(current instanceof LNode) {
+				LNode n = (LNode) current;
+				if (n.cutWordProbability > 0.75) {
+					cutNodesToVisit.addFirst(current);
+					logger.info("Node added as cut node : [" + current.getWord() + "]");
+				}
+			}
+		}		
 	}
 
 	public String nextWord() {
@@ -166,7 +225,7 @@ class NodeIterator<T extends Node> implements Iterator<T> {
 			visiting = true;
 		while (hasNext()) {
 			LNode n = (LNode) next();
-			if (n.endsWord) {
+			if (n.isEndsWord()) {
 				return n.getWord();
 			}
 		}
@@ -186,27 +245,6 @@ class NodeIterator<T extends Node> implements Iterator<T> {
 			}
 		}
 		return rootNodesToVisit.removeFirst().getWord();
-	}
-
-	@SuppressWarnings("unchecked")
-	public LNode nextCutNode() {
-		if (!visiting) {
-			visiting = true;
-			rootNodesToVisit.removeFirst();
-		}
-		while (hasNext()) {
-			T current = nodesToVisit.removeFirst();
-			for (int i = 0; i < NUM_LETTERS; i++) {
-				T item;
-				if ((item = (T) current.getNthChild(i)) != null)
-					nodesToVisit.addFirst(item);
-			}
-			LNode n = (LNode) current;
-			if (n.cutWordProbability > 0.75) {
-				cutNodesToVisit.addFirst(n);
-			}
-		}
-		return cutNodesToVisit.removeFirst();
 	}
 
 	@SuppressWarnings("unchecked")

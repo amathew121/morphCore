@@ -20,6 +20,7 @@ public abstract class Node {
     private boolean visited;
     private int occurrences;
     private int numChildren;
+    private int level = 0;
 
     Node() {
         word = "";
@@ -87,8 +88,15 @@ public abstract class Node {
         this.occurrences++;
     }
     
+    public void setLevel(int level) {
+    	this.level = level;
+    }
    
-    @Override
+    public int getLevel() {
+		return level;
+	}
+
+	@Override
     public int hashCode() {
         int hash = 7;
         hash = 29 * hash + Arrays.deepHashCode(this.child);
