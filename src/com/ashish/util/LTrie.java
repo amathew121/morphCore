@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -18,6 +19,8 @@ import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
+
+import com.ashish.corpus.SuffixTrieFilter;
 
 public class LTrie extends Trie<LNode> {
 
@@ -34,11 +37,12 @@ public class LTrie extends Trie<LNode> {
 	public void add(String str) throws UnsupportedEncodingException {
 		add(str, false);
 	}
+	
 
 	public void add(String str, boolean isRootForm)
 			throws UnsupportedEncodingException {
 		// FacesContext context = FacesContext.getCurrentInstance();
-		LNode current = root;
+		LNode current = getRoot();
 		for (int i = 0; i < str.length(); i++) {
 			int index;
 			try {
@@ -47,7 +51,7 @@ public class LTrie extends Trie<LNode> {
 				logger.info("General Punctuation found, letter skipped");
 				continue;
 			}
-			logger.info("index added " + index + " -- " + str.charAt(i));
+			//logger.info("index added " + index + " -- " + str.charAt(i));
 			if (index >= 0 && index < NUM_LETTERS) {
 				addChild(current, index);
 				if (mode == CUTWORD) {
@@ -70,7 +74,7 @@ public class LTrie extends Trie<LNode> {
 
 	@Override
 	public Node search(String str) {
-		LNode current = root;
+		LNode current = getRoot();
 		try {
 			for (int i = 0; i < str.length(); i++) {
 				int index;
@@ -99,8 +103,8 @@ public class LTrie extends Trie<LNode> {
 		ArrayList<String> words = new ArrayList<String>();
 		if (node.getNumChildren() < 2)
 			return 0.0f;
-		if (node.equals(root) || node.getParent().equals(root)
-				|| node.getParent().getParent().equals(root))
+		if (node.equals(getRoot()) || node.getParent().equals(getRoot())
+				|| node.getParent().getParent().equals(getRoot()))
 			return 0.0f;
 		Node inflexNode = node.getParent().getParent();
 		NodeIterator<Node> iterator = new NodeIterator<Node>(inflexNode);
@@ -114,7 +118,7 @@ public class LTrie extends Trie<LNode> {
 		return 0.0f;
 	}
 	public Node searchRootWord(String str) {
-		LNode current = root;
+		LNode current = getRoot();
 		try {
 			for (int i = 0; i < str.length(); i++) {
 				int index;
@@ -136,9 +140,30 @@ public class LTrie extends Trie<LNode> {
 		}
 		return null;
 	}
+	
+	public List<LNode> getAllWords() {
+		LNode current = getRoot();
+		List<LNode> allWords;
+		allWords = new ArrayList<LNode>();
+		getWordsInternal(allWords, new StringBuilder(), current);
+		return allWords;
+	}
+	
+	private void getWordsInternal(List<LNode> words, StringBuilder prefix, LNode node) {
+		if (node.isEndsWord()) {
+			words.add(node);
+		}
+		for (int i = 0; i < NUM_LETTERS; i++) {
+			if (node.getNthChild(i) != null) {
+				prefix.append(toLetter(i));
+				getWordsInternal(words, prefix, (LNode) node.getNthChild(i));
+				prefix.deleteCharAt(prefix.length() - 1);
+			}
+		}
+	}
 
 	public List<String> print() {
-		LNode current = root;
+		LNode current = getRoot();
 		List<String> allWords;
 		allWords = new ArrayList<String>();
 		print(allWords, new StringBuilder(), current);
@@ -156,7 +181,7 @@ public class LTrie extends Trie<LNode> {
 	}
 
 	private void print(List<String> words, StringBuilder prefix, LNode node) {
-		if (node.isEndsWord()) {
+		if (node.isEndsWord() || node.getNumChildren() == 0) {
 			words.add(prefix.toString());
 		}
 		for (int i = 0; i < NUM_LETTERS; i++) {
@@ -168,8 +193,8 @@ public class LTrie extends Trie<LNode> {
 		}
 	}
 
-	public List<String> getBranches() {
-		throw new UnsupportedOperationException();
+	public List<LNode> getBranches() {
+		return null;
 	}
 
 	/*
@@ -229,25 +254,26 @@ public class LTrie extends Trie<LNode> {
 			t.initLexicon(s);
 			t.add("പട്ടി", true);
 			t.add("പട്ടിയെ", false);
-			t.add("പട്ടിക്കു",false);
+			t.add("പട്ടിക്കു", false);
 			t.add("പടനം", false);
 			t.add("പട്ടികള്‍");
 			t.add("പട്ടികള്‍ക്ക്");
 			t.add("മരം", true);
-			t.add("മരമേ",false);
+			t.add("മരമേ", false);
 			
 			//Get from database. 
 			/*
 			for (Word word : words) {
 				String str = word.getWord();
-				System.out.println(str);
+				//System.out.println(str);
+				//logger.info(str);
 				try {
 					t.add(str,false);
 				} catch (UnsupportedEncodingException e) {
 					continue;
 				}
-			}
-			*/
+			}*/
+			
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 			System.exit(0);
@@ -257,7 +283,8 @@ public class LTrie extends Trie<LNode> {
 		// "à´‰à´¤àµ�à´¤à´°à´¾à´«àµ�à´°à´¿à´•àµ�à´•à´¯à´¿àµ½ à´¨à´¿à´¨àµ�à´¨àµ�à´³àµ�à´³ à´²à´¤àµ�à´¤àµ€àµ» à´•àµ�à´°à´¿à´¸àµ�à´¤àµ€à´¯à´šà´¿à´¨àµ�à´¤à´•à´¨àµ�à´‚, à´¦àµˆà´µà´¶à´¾à´¸àµ�à´¤àµ�à´°à´œàµ�à´žà´¨àµ�à´‚ à´®àµ†à´¤àµ�à´°à´¾à´¨àµ�à´®à´¾à´¯à´¿à´°àµ�à´¨àµ�à´¨àµ� à´¹à´¿à´ªàµ�à´ªàµ‹à´¯à´¿à´²àµ† à´…à´—à´¸àµ�à´¤àµ€à´¨àµ‹à´¸àµ�. à´µà´¿à´¶àµ�à´¦àµ�à´§ à´…à´—à´¸àµ�à´±àµ�à´±à´¿àµ» (à´¸àµ†à´¯àµ�à´¨àµ�à´±àµ� à´…à´—à´¸àµ�à´±àµ�à´±à´¿àµ»), à´µà´¿à´¶àµ�à´¦àµ�à´§ à´“à´¸àµ�à´±àµ�à´±à´¿àµ», à´”à´±àµ‡à´²à´¿à´¯àµ�à´¸àµ� à´…à´—à´¸àµ�à´¤àµ€à´¨àµ‹à´¸àµ� à´Žà´¨àµ�à´¨àµ€ à´ªàµ‡à´°àµ�à´•à´³à´¿à´²àµ�à´‚ à´…à´¦àµ�à´¦àµ‡à´¹à´‚ à´…à´±à´¿à´¯à´ªàµ�à´ªàµ†à´Ÿàµ�à´¨àµ�à´¨àµ�. à´±àµ‹à´®àµ» à´•à´¤àµ�à´¤àµ‹à´²à´¿à´•àµ�à´•à´¾ à´¸à´­à´¯àµ�à´‚ à´†à´‚à´—àµ�à´²à´¿à´•àµ�à´•àµ» à´•àµ‚à´Ÿàµ�à´Ÿà´¾à´¯àµ�à´®à´¯àµ�à´‚ à´…à´—à´¸àµ�à´¤àµ€à´¨àµ‹à´¸à´¿à´¨àµ† à´µà´¿à´¶àµ�à´¦àµ�à´§à´¨àµ�à´‚ à´µàµ‡à´¦à´ªà´¾à´°à´‚à´—à´¤à´¨àµ�à´®à´¾à´°à´¿àµ½ à´®àµ�à´®àµ�à´ªà´¨àµ�à´‚ à´†à´¯à´¿ à´®à´¾à´¨à´¿à´•àµ�à´•àµ�à´¨àµ�à´¨àµ�. à´ªàµ�à´°àµŠà´Ÿàµ�à´Ÿà´¸àµ�à´±àµ�à´±à´¨àµ�à´±àµ� à´¨à´µàµ€à´•à´°à´£à´¤àµ�à´¤àµ† à´�à´±àµ�à´±à´µàµ�à´®àµ‡à´±àµ† à´¸àµ�à´µà´¾à´§àµ€à´¨à´¿à´šàµ�à´š à´¸à´­à´¾à´ªà´¿à´¤à´¾à´µàµ� à´…à´¦àµ�à´¦àµ‡à´¹à´®à´¾à´£àµ�. à´…à´—à´¸àµ�à´¤àµ€à´¨àµ‹à´¸à´¿à´¨àµ�à´±àµ† à´šà´¿à´¨àµ�à´¤à´¯àµ�à´‚, à´¤à´¤àµ�à´¤àµ�à´µà´šà´¿à´¨àµ�à´¤à´¯à´¿à´²àµ�à´‚ à´¦àµˆà´µà´¶à´¾à´¸àµ�à´¤àµ�à´°à´¤àµ�à´¤à´¿à´²àµ�à´‚ à´…à´¦àµ�à´¦àµ‡à´¹à´‚ à´°àµ‚à´ªà´ªàµ�à´ªàµ†à´Ÿàµ�à´¤àµ�à´¤à´¿à´¯ à´¨à´¿à´²à´ªà´¾à´Ÿàµ�à´•à´³àµ�à´‚ à´®à´¦àµ�à´§àµ�à´¯à´•à´¾à´² à´²àµ‹à´•à´µàµ€à´•àµ�à´·à´£à´¤àµ�à´¤àµ† à´…à´Ÿà´¿à´¸àµ�à´¥à´¾à´¨à´ªà´°à´®à´¾à´¯à´¿ à´¸àµ�à´µà´¾à´§àµ€à´¨à´¿à´šàµ�à´šàµ�. à´®à´¨àµ�à´·àµ�à´¯à´¸àµ�à´µà´¾à´¤à´¨àµ�à´¤àµ�à´°àµ�à´¯à´¤àµ�à´¤à´¿à´¨àµ�â€Œ à´¦àµˆà´µà´¤àµ�à´¤à´¿à´¨àµ�à´±àµ† à´•àµƒà´ª à´’à´´à´¿à´šàµ�à´šàµ�à´•àµ‚à´Ÿà´¾à´¤àµ�à´¤à´¤à´¾à´£àµ†à´¨àµ�à´¨àµ� à´…à´¦àµ�à´¦àµ‡à´¹à´‚ à´µà´¿à´¶àµ�à´µà´¸à´¿à´šàµ�à´šàµ�. à´¤àµ�à´Ÿà´™àµ�à´™à´¿à´¯ à´®à´¤, à´°à´¾à´·àµ�à´Ÿàµ�à´°àµ€à´¯ à´¸à´™àµ�à´•à´²àµ�à´ªà´™àµ�à´™àµ¾ à´•àµ�à´°àµˆà´¸àµ�à´¤à´µà´²àµ‹à´•à´¤àµ�à´¤à´¿à´¨àµ�â€Œ à´¸à´®àµ�à´®à´¾à´¨à´¿à´šàµ�à´šà´¤àµ� à´…à´—à´¸àµ�à´¤àµ€à´¨àµ‹à´¸à´¾à´£àµ�â€Œ";
 
 		// method1HeuristicCut(t);
-		t.method2RootWordCut(t);
+		//t.method2RootWordCut(t);
+		t.method3AshishAlgo();
 	}
 
 	public void initLexicon(String s) throws UnsupportedEncodingException {
@@ -284,6 +311,24 @@ public class LTrie extends Trie<LNode> {
 		splitter.suffixSearch(t);
 		
 	}
+	
+	public LTrie method3AshishAlgo(){
+		StemsAndAffixes sa = new StemsAndAffixes(this);
+		LTrie suffixes = null;
+		try {
+			suffixes = sa.ashishAlgo2(this);
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+		}
+		SuffixTrieFilter stf = new SuffixTrieFilter(); 
+		stf.setTrie(suffixes);
+		stf.filter();
+		System.out.println("Suffixes filtered. Words deleted - " + stf.getDeleteCount());
+		//String Msg = "" + suffixes.print();
+		//logger.info(Msg);
+		//System.out.println(Msg);
+		return suffixes;
+	}
 
 	private static void method1HeuristicCut(LTrie trie)
 			throws UnsupportedEncodingException {
@@ -302,6 +347,55 @@ public class LTrie extends Trie<LNode> {
 		logger.info("" +stemsAndAffixes.getAffixes());
 	}
 
+	public void addOnlyBranch(String word, LNode node) throws UnsupportedEncodingException, PunctuationException{
+		LNode current = node;
+		LNode currentTemp = getRoot();
+		for (int i = 0; i < word.length(); i++) {
+			char c = word.charAt(i);
+			int trieIndex =toIndex(c);
+			current = (LNode) current.getNthChild(trieIndex);
+			currentTemp = (LNode) addChild(currentTemp,trieIndex);
+			//System.out.println(c + " - " + trieIndex+ " - " + this.print());
+			merge(currentTemp,current);
+		}
+	}
+	
+	public void add(LNode node) throws UnsupportedEncodingException, PunctuationException {
+		HashMap<LNode,LNode> mapping = new HashMap<>();
+		LNode sNode = add(this.getRoot(),node);
+		mapping.put(node, sNode);
+		NodeIterator<LNode> iterator = new NodeIterator<LNode>(node);
+		while(iterator.hasNext()) {
+			LNode nextNode  = iterator.next();
+			sNode = mapping.get(nextNode.getParent());
+			if(sNode == null) {
+				//new Exception().printStackTrace();
+				continue;
+			}
+			sNode = add(sNode,nextNode);
+			mapping.put(nextNode, sNode);
+		}
+	}
+	
+	public LNode add(LNode baseNode,LNode toAddNode) throws UnsupportedEncodingException, PunctuationException {
+		int index = toIndex(toAddNode.nodeChar);
+		LNode sNode = (LNode) addChild(baseNode, index);
+		merge(sNode, toAddNode);
+		return sNode;
+	}
+	
+	private void merge(LNode sNode, LNode toAddNode) {
+		//sNode.setOccurrences(toAddNode.getOccurrences());
+		if(toAddNode.isEndsWord()) {
+			sNode.setEndsWord(true);
+			for(Tags tag : toAddNode.tags) {
+				sNode.addTags(tag);
+			}
+		}
+		
+	}
+
+	
 	private double getProbability(LNode n) {
 		if(n.rootWord) {
 			return 1;
@@ -337,4 +431,7 @@ public class LTrie extends Trie<LNode> {
 		double probability = (double) rootCount / wordCount;
 		return probability;
 	}
+
+	
+	
 }

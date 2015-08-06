@@ -1,8 +1,9 @@
 package com.ashish.util;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
-class LNode extends Node {
+public class LNode extends Node {
 	boolean rootWord;
 	private boolean endsWord;
 	ArrayList<Tags> tags;
@@ -20,9 +21,7 @@ class LNode extends Node {
 
 	@Override
 	public String toString() {
-		return "Node{" + "word=" + getWord() + ", rootWord=" + rootWord
-				+ ", endsWord=" + endsWord + "}\n" + "Occurences"
-				+ getOccurrences() + "Hashcode" + hashCode();
+		return getWord();
 	}
 
 	@Override
@@ -58,9 +57,31 @@ class LNode extends Node {
 			tags.add(tag);
 		}
 	}
-	public void getTags() {
-		if (endsWord) {
-			
-		}
+	public ArrayList<Tags> getTags() {
+		return tags;
 	}
+	
+	public String getNodeText() {
+		StringBuilder nodeText = new StringBuilder();
+		nodeText.append("Occurrences:\t" + this.getOccurrences() + "\n");
+		nodeText.append("Parent:\t" + this.getParent().getWord() + "\n");
+		nodeText.append("Level:\t" + this.getLevel() + "\n");
+		nodeText.append("Tags:\t" + this.getTags() + "\n");
+		nodeText.append("Children:\t" + this.getNumChildren() + "\n");
+		return nodeText.toString();
+	}
+
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		LNode newNode = new LNode();
+		newNode.rootWord = this.rootWord;
+		newNode.endsWord = this.endsWord;
+		Collections.copy(newNode.tags, this.tags);
+		newNode.nodeChar = this.nodeChar;
+		newNode.cutWordProbability = this.cutWordProbability;
+		newNode.numRootChildren = this.numRootChildren;
+		return newNode;
+	}
+	
+	
 }

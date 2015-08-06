@@ -24,6 +24,7 @@ public class LogManager {
 
 	        // This block configure the logger with handler and formatter  
 	        fh = new FileHandler("D:/morphCore.log");  
+	        fh.setEncoding("UTF-8");
 	        logger.addHandler(fh);
 	        logger.setUseParentHandlers(false);
 	        SimpleFormatter formatter = new SimpleFormatter();  

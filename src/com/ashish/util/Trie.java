@@ -8,15 +8,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public abstract class Trie<T extends Node> implements Iterator<T> {
+public abstract class Trie<T extends Node> implements Iterator<T>{
 	static protected final int NUM_LETTERS = 128;
-	T root;
+	private T root;
 	private LinkedList<T> nodesToVisit;
 
 	static Logger logger = LogManager.getLogManager();
 
-	public Trie(T root) {
+	public T getRoot() {
+		return root;
+	}
+
+	private void setRoot(T root) {
 		this.root = root;
+	}
+
+	public Trie(T root) {
+		this.setRoot(root);
 		nodesToVisit = new LinkedList<T>();
 		nodesToVisit.addFirst(root);
 	}
@@ -25,9 +33,9 @@ public abstract class Trie<T extends Node> implements Iterator<T> {
 		return (char) (index + '\u0D00');
 	}
 
-	static protected int toIndex(char letter)
+	static public int toIndex(char letter)
 			throws UnsupportedEncodingException, PunctuationException {
-		logger.info("Got letter to convert to index: " + letter + " having int value of " + (int) letter );
+		//logger.info("Got letter to convert to index: " + letter + " having int value of " + (int) letter );
 		if ((letter - '\u0D00') > 0 && (letter - '\u0D00') < 128) {
 			return letter - '\u0D00';
 		} else if (letter == '\u200D') {
@@ -47,18 +55,18 @@ public abstract class Trie<T extends Node> implements Iterator<T> {
 	 * @return
 	 */
 	public Node addChild(Node node, int index) {
-		node.incOccurrences();
 		if (node.getNthChild(index) == null) {
 			Node newChild = node.newChild(node, toLetter(index));
 			newChild.setLevel(node.getLevel()+1);
 			node.setNthChild(newChild, index);
 			node.incNumChildren();
 		}
-		return node.getNthChild(index);
+		Node childNode = node.getNthChild(index);
+		childNode.incOccurrences();
+		//System.out.println(childNode.getWord() + ":\t" + childNode.getOccurrences());
+		return childNode;
 	}
  
-
-
 	public abstract void add(String s) throws UnsupportedEncodingException;
 
 	public abstract Node search(String s);
@@ -91,6 +99,88 @@ public abstract class Trie<T extends Node> implements Iterator<T> {
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
+
+
+}
+
+class BranchIterator<T extends Node> implements Iterator<T> {
+	static protected final int NUM_LETTERS = 128;
+	private T base;
+	private LinkedList<T> nodesToVisit;
+	private LinkedList<T> branchesToVisit;
+
+	public BranchIterator(T node) {
+		super();
+		this.base = node;
+		nodesToVisit = new LinkedList<T>();
+		for (int i = 0; i < NUM_LETTERS; i++) {
+			T item;
+			if ((item = (T) base.getNthChild(i)) != null)
+				nodesToVisit.addFirst(item);
+		}
+		branchesToVisit = new LinkedList<T> ();
+		T nextNode = getNextBranch();
+		if(nextNode != null) {
+			branchesToVisit.add(nextNode);
+		}
+	}
+	
+	@Override
+	public boolean hasNext() {
+		if (!branchesToVisit.isEmpty())
+			return true;
+		return false;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public T next() {
+		if (hasNext()) {
+			T branchNode = getNextBranch();
+			if (branchNode != null) {
+				branchesToVisit.addFirst(branchNode);
+			}
+			return branchesToVisit.removeFirst();
+		}
+			
+			return null;
+	}
+	
+	private T getNextBranch() {
+		if (!nodesToVisit.isEmpty()) {
+		T current = nodesToVisit.removeFirst();
+		//System.out.print(current.getWord() + "->");
+		if(current instanceof LNode) {
+			LNode node = (LNode) current;
+			if(node.isEndsWord()) {
+				return current;
+			}
+		} 
+		if (current.getNumChildren() > 1 ) {
+			//System.out.println("Found Branch");
+			return current;
+		} else {
+//			System.out.println("c");
+			for (int i = 0; i < NUM_LETTERS; i++) {
+				T item;
+				if ((item = (T) current.getNthChild(i)) != null)
+					if ((item.getLevel() - current.getLevel())<current.getLevel() )
+						nodesToVisit.addFirst(item);
+			}
+			//System.out.println("" +nodesToVisit);
+
+			return getNextBranch();
+		}
+		} else {
+			//System.out.println("Finished");
+			return null;
+		} 
+	}
+
+	@Override
+	public void remove() {
+	}
+	
 }
 
 class DepthLimitedIterator<T extends Node> implements Iterator<T> {

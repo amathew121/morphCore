@@ -18,7 +18,7 @@ public class STrie extends Trie<SNode> {
 	@Override
 	public void add(String str) throws UnsupportedEncodingException {
 		// FacesContext context = FacesContext.getCurrentInstance();
-		SNode current = root;
+		SNode current = getRoot();
 		for (int i = 0; i < str.length(); i++) {
 			int index;
 			try {
@@ -40,7 +40,7 @@ public class STrie extends Trie<SNode> {
 
 	public void add(LNode node) throws UnsupportedEncodingException, PunctuationException {
 		HashMap<LNode,SNode> mapping = new HashMap<>();
-		SNode sNode = add(this.root,node);
+		SNode sNode = add(this.getRoot(),node);
 		mapping.put(node, sNode);
 		NodeIterator<LNode> iterator = new NodeIterator<LNode>(node);
 		while(iterator.hasNext()) {
@@ -74,7 +74,7 @@ public class STrie extends Trie<SNode> {
 
 	@Override
 	public Node search(String str) {
-		SNode current = root;
+		SNode current = getRoot();
 		try {
 			for (int i = 0; i < str.length(); i++) {
 				int index;
@@ -98,7 +98,7 @@ public class STrie extends Trie<SNode> {
 	}
 
 	public List<String> print() {
-		SNode current = root;
+		SNode current = getRoot();
 		List<String> allWords;
 		allWords = new ArrayList<String>();
 		print(allWords, new StringBuilder(), current);

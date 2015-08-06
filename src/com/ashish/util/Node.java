@@ -5,6 +5,7 @@
 package com.ashish.util;
 
 import static com.ashish.util.Trie.NUM_LETTERS;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -12,7 +13,7 @@ import java.util.Arrays;
  *
  * @author Ashish
  */
-public abstract class Node {
+public abstract class Node implements Comparable<Node> {
 
     private String word;
     private Node parent;
@@ -22,6 +23,13 @@ public abstract class Node {
     private int numChildren;
     private int level = 0;
 
+	@Override
+	public int compareTo(Node o) {
+	    Integer myOcc = this.occurrences;
+	    Integer yourOcc = o.occurrences;
+	    return -myOcc.compareTo(yourOcc);
+	}
+	
     Node() {
         word = "";
     }

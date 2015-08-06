@@ -6,7 +6,7 @@ public class RootWordSplitter {
 
 	public STrie suffixSearch(LTrie t) {
 		STrie sTrie = new STrie();
-		NodeIterator<LNode> words = new NodeIterator<LNode>(t.root);
+		NodeIterator<LNode> words = new NodeIterator<LNode>(t.getRoot());
 		while (words.hasNextCutNode()) {
 			LNode node = words.nextCutNode();
 			System.out.println(node.getWord());
@@ -37,7 +37,7 @@ public class RootWordSplitter {
 		t.initLexicon(s);
 		t.add("മരം", true); 
 
-		NodeIterator<Node> words = new NodeIterator<Node>(t.root);
+		NodeIterator<Node> words = new NodeIterator<Node>(t.getRoot());
 		while(words.hasNext()) {
 			System.out.println(words.nextWord ());
 		}
