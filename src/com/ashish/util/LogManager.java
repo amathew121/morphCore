@@ -23,7 +23,7 @@ public class LogManager {
 	    try {  
 
 	        // This block configure the logger with handler and formatter  
-	        fh = new FileHandler("D:/morphCore.log");  
+	        fh = new FileHandler("../log/morphCore.log");  
 	        fh.setEncoding("UTF-8");
 	        logger.addHandler(fh);
 	        logger.setUseParentHandlers(false);

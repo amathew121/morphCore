@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -33,68 +34,22 @@ public class LTrie extends Trie<LNode> {
 		super(new LNode());
 	}
 
-	@Override
-	public void add(String str) throws UnsupportedEncodingException {
-		add(str, false);
-	}
+
 	
 
 	public void add(String str, boolean isRootForm)
 			throws UnsupportedEncodingException {
-		// FacesContext context = FacesContext.getCurrentInstance();
 		LNode current = getRoot();
-		for (int i = 0; i < str.length(); i++) {
-			int index;
-			try {
-				index = toIndex(str.charAt(i));
-			} catch (PunctuationException e) {
-				logger.info("General Punctuation found, letter skipped");
-				continue;
-			}
-			//logger.info("index added " + index + " -- " + str.charAt(i));
-			if (index >= 0 && index < NUM_LETTERS) {
-				addChild(current, index);
-				if (mode == CUTWORD) {
-					current.cutWordProbability = calculateProbability(current);
-				}
-				current = (LNode) current.getNthChild(index);
-			}
+		LNode child = add(str);
+		if (mode == CUTWORD) {
+			current.cutWordProbability = calculateProbability(current);
 		}
-		// context.addMessage(null, new FacesMessage("Successful", "Added " +
-		// str));
-		current.setEndsWord(true);
 		if (isRootForm) {
-			((LNode) current).rootWord = true;
-			((LNode) current).incNumRootChildren();
+			((LNode) child).rootWord = true;
+			((LNode) child).incNumRootChildren();
 			// context.addMessage(null, new FacesMessage("Successful",
 			// "Added as Root Word" + str));
-
 		}
-	}
-
-	@Override
-	public Node search(String str) {
-		LNode current = getRoot();
-		try {
-			for (int i = 0; i < str.length(); i++) {
-				int index;
-				try {
-					index = toIndex(str.charAt(i));
-				} catch (PunctuationException e) {
-					continue;
-				}
-				if (current.getNthChild(index) == null) {
-					return current;
-				}
-				current = (LNode) current.getNthChild(index);
-			}
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-		if (current.isEndsWord()) {
-			return current;
-		}
-		return current;
 	}
 
 	//FIXME: THis function needs to be fixed or removed.
@@ -141,100 +96,9 @@ public class LTrie extends Trie<LNode> {
 		return null;
 	}
 	
-	public List<LNode> getAllWords() {
-		LNode current = getRoot();
-		List<LNode> allWords;
-		allWords = new ArrayList<LNode>();
-		getWordsInternal(allWords, new StringBuilder(), current);
-		return allWords;
-	}
-	
-	private void getWordsInternal(List<LNode> words, StringBuilder prefix, LNode node) {
-		if (node.isEndsWord()) {
-			words.add(node);
-		}
-		for (int i = 0; i < NUM_LETTERS; i++) {
-			if (node.getNthChild(i) != null) {
-				prefix.append(toLetter(i));
-				getWordsInternal(words, prefix, (LNode) node.getNthChild(i));
-				prefix.deleteCharAt(prefix.length() - 1);
-			}
-		}
-	}
-
-	public List<String> print() {
-		LNode current = getRoot();
-		List<String> allWords;
-		allWords = new ArrayList<String>();
-		print(allWords, new StringBuilder(), current);
-		return allWords;
-	}
-
-	@Override
-	public List<String> print(String prefix) {
-		List<String> suggestWords;
-		suggestWords = new ArrayList<String>();
-		LNode current;
-		current = (LNode) search(prefix);
-		print(suggestWords, new StringBuilder(current.getWord()), current);
-		return suggestWords;
-	}
-
-	private void print(List<String> words, StringBuilder prefix, LNode node) {
-		if (node.isEndsWord() || node.getNumChildren() == 0) {
-			words.add(prefix.toString());
-		}
-		for (int i = 0; i < NUM_LETTERS; i++) {
-			if (node.getNthChild(i) != null) {
-				prefix.append(toLetter(i));
-				print(words, prefix, (LNode) node.getNthChild(i));
-				prefix.deleteCharAt(prefix.length() - 1);
-			}
-		}
-	}
-
 	public List<LNode> getBranches() {
 		return null;
 	}
-
-	/*
-	 * public HashMap<String, Integer> hashMap; public LTrie suffixes;
-	 * 
-	 * public ArrayList<String> getSuffixHashes() { hashMap = new
-	 * HashMap<String, Integer>(); suffixes = new LTrie(); LNode current = root;
-	 * return getSuffixHashes(current, hashMap); // Collection<Integer> co =
-	 * hashMap.values(); // return co; }
-	 */
-
-	/*
-	 * private ArrayList<String> getSuffixHashes(LNode node, HashMap<String,
-	 * Integer> hashMap) { ArrayList<String> suffixHashes = new
-	 * ArrayList<String>(); if (node.endsWord) { String hash =
-	 * ""+node.getNodeChar(); try { suffixes.add(hash); suffixHashes.add(hash);
-	 * countHashes(hash, hashMap); return suffixHashes; } catch
-	 * (UnsupportedEncodingException e) { e.printStackTrace(); } } for (int i =
-	 * 0; i < NUM_LETTERS; i++) { LNode tempNode; if ((tempNode = (LNode)
-	 * node.getNthChild(i)) != null) { ArrayList<String> tempList =
-	 * appendHashes(tempNode, node.getNodeChar(), hashMap);
-	 * suffixHashes.addAll(tempList); } } return suffixHashes; }
-	 */
-	/*
-	 * private ArrayList<String> appendHashes(LNode node, char hash,
-	 * HashMap<String, Integer> hashMap) { ArrayList<String> temp =
-	 * getSuffixHashes(node, hashMap); try { for (int i = 0; i < temp.size();
-	 * i++) { String str = temp.get(i); str = hash+str; temp.set(i, str);
-	 * suffixes.add(str); countHashes(str, hashMap); } } catch
-	 * (UnsupportedEncodingException e) { e.printStackTrace(); } return temp; }
-	 */
-
-	/*
-	 * private void countHashes(String temp, HashMap<String, Integer> hashMap) {
-	 * Integer count = hashMap.get(temp); if (count != null) { //
-	 * logger.info("key "+ temp+" value = "+count); hashMap.put(temp,
-	 * ++count); } else hashMap.put(temp, 1); }
-	 */
-
-	
 	
 	public static void main(String args[]) throws ClassNotFoundException, SQLException {
 		
@@ -388,7 +252,7 @@ public class LTrie extends Trie<LNode> {
 		//sNode.setOccurrences(toAddNode.getOccurrences());
 		if(toAddNode.isEndsWord()) {
 			sNode.setEndsWord(true);
-			for(Tags tag : toAddNode.tags) {
+			for(String tag : toAddNode.tags) {
 				sNode.addTags(tag);
 			}
 		}

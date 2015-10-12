@@ -5,8 +5,7 @@ import java.util.Collections;
 
 public class LNode extends Node {
 	boolean rootWord;
-	private boolean endsWord;
-	ArrayList<Tags> tags;
+	ArrayList<String> tags;
 	char nodeChar;
 	double cutWordProbability;
 	private int numRootChildren = 0;
@@ -44,20 +43,16 @@ public class LNode extends Node {
 	public void setEndsWord(boolean value) {
 		if(value == true) {
 			endsWord = true;
-			tags = new ArrayList<Tags>();
+			tags = new ArrayList<String>();
 		}
 	}
 	
-	public boolean isEndsWord() {
-		return endsWord;
-	}
-	
-	public void addTags(Tags tag) {
+	public void addTags(String tag) {
 		if (endsWord) {
 			tags.add(tag);
 		}
 	}
-	public ArrayList<Tags> getTags() {
+	public ArrayList<String> getTags() {
 		return tags;
 	}
 	

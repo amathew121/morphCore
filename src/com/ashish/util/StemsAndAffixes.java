@@ -1,5 +1,7 @@
 package com.ashish.util;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Set;
@@ -14,6 +16,7 @@ public class StemsAndAffixes {
 	private HashMap<String, Integer> stems = new HashMap<String, Integer>();
 	private HashMap<String, Integer> affixes = new HashMap<String, Integer>();
 	private boolean firstTimeExecuted = false;
+	
 
 	public StemsAndAffixes(LTrie lexiconTrie) {
 		super();
@@ -83,6 +86,15 @@ public class StemsAndAffixes {
 
 	
 	public LTrie ashishAlgo2(LTrie trie) throws CloneNotSupportedException {
+		FSTGenerator fstGenerator = FSTGenerator.getFSTGenerator();
+		FileWriter lemmaFSTWriter= null;
+		
+		int count = 1; 
+		try {
+			lemmaFSTWriter = fstGenerator.openLemmaFST();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 		LTrie suffixes = new LTrie();
 		if (!firstTimeExecuted) {
 			firstTimeExecuted = true;
@@ -93,7 +105,28 @@ public class StemsAndAffixes {
 			LNode node = iterator.next();
 			if (node != null) {
 				 System.out.println(node.getWord());
-
+				 if (node.getWord() != null) {
+					 try {
+						 fstGenerator.append(lemmaFSTWriter, 0, count, FSTGenerator.EPSILON, FSTGenerator.EPSILON);
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					 for (int i = 0 ; i < node.getWord().length(); i++) {
+						 try {
+							lemmaFSTWriter.append("" + count)
+								.append(" ")
+								.append("" + (++count))
+								.append(" ")
+								.append(""  +node.getWord().charAt(i))
+								.append(" ")
+								.append(node.getWord().charAt(i))
+								.append("\n");
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					 }
+				 }
 				try {
 					String s = node.getWord();
 					if (node.isEndsWord() && firstTimeExecuted) {
@@ -129,6 +162,12 @@ public class StemsAndAffixes {
 
 			}
 		}
+		try {
+			fstGenerator.closeLemmaFST(lemmaFSTWriter);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		if (present) {
 			logger.info("" + suffixes.print());
 			System.out.println("Present: DOWN" + suffixes.print());

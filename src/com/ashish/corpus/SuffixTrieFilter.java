@@ -67,7 +67,7 @@ public class SuffixTrieFilter {
 		do {
 			current = nodesToVisit.removeFirst();
 
-			for (int i = 0; i <128 ;i++) {
+			for (int i = 0; i <Trie.NUM_LETTERS ;i++) {
 				Node childNode = current.getNthChild(i);
 				if(childNode != null ) {
 					if (childNode.getOccurrences() <= 2 ) { 

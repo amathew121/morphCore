@@ -38,9 +38,11 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.StringTokenizer;
@@ -48,8 +50,14 @@ import java.util.StringTokenizer;
 import javax.swing.JInternalFrame;
 
 import com.ashish.corpus.LTrieFilter;
+import com.ashish.corpus.SuffixTrieFilter;
 import com.ashish.mam.MorphologicalAnalyser;
+import com.ashish.util.FSTGenerator;
 import com.ashish.util.LNode;
+import com.ashish.util.LTrie;
+import com.ashish.util.Node;
+import com.ashish.util.SNode;
+import com.ashish.util.STrie;
 import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.ColumnSpec;
 import com.jgoodies.forms.layout.RowSpec;
@@ -76,13 +84,13 @@ public class MainWindow {
 	private final Action fileChoose = new FileReaderAction();
 	private final List<LNode> allWords = new ArrayList<LNode>();
 	private final List<LNode> rootWords = new ArrayList<LNode>();
-	private final List<LNode> suffixes = new ArrayList<LNode>();
+	private final List<SNode> suffixes = new ArrayList<SNode>();
 	
 	private final Action wordListAction = new RefreshWordListAction();
-	private final Action rootWordListAction = new RefreshRootWordListAction();
 	private final Action suffixListAction = new RefreshSuffixesListAction();
 	private final Action writeFSTtoFileAction = new WriteFSTtoFile();
 
+	
 	private JTable table_1;
 	private JTable table_2;
 	private enum ListMode {WORD,ROOTWORD,SUFFIX};
@@ -144,9 +152,6 @@ public class MainWindow {
 		ListSelectionModel listSelectionModel = wordsList.getSelectionModel();
 		listSelectionModel
 		.addListSelectionListener(new SharedListSelectionHandler((JTextPane)wordSplitPane.getRightComponent(), ListMode.WORD));
-
-		final JList rootWordList = new JList(); 
-		JSplitPane rootWordSplitPane = initializeTab("RootWords",rootWordList,tabbedPane);
 
 		final JList suffixList = new JList(); 
 		JSplitPane suffixSplitPane = initializeTab("Suffixes",suffixList, tabbedPane);
@@ -258,14 +263,6 @@ public class MainWindow {
 						log.append(errorCount + " words skipped");
 					}
 					log.append("\n");
-					log.append("Filtering words");
-					LTrieFilter cg = new LTrieFilter();
-					cg.setTrie(MorphologicalAnalyser.getTrie());
-					cg.filter();
-					log.append(cg.getDeleteCount() + " words deleted while filtering");
-
-					
-
 				} catch (FileNotFoundException e1) {
 					log.append("File Not Found" + "\n");
 				} catch (IOException e1) {
@@ -280,10 +277,18 @@ public class MainWindow {
 
 		private void addTextInTrie(String textToBeAdded) {
 			StringTokenizer tokens = new StringTokenizer(textToBeAdded);
+			Node node = null;
 			while (tokens.hasMoreTokens()) {
 				try {
-					MorphologicalAnalyser.getTrie().add(tokens.nextToken());
-					count++;
+					String token = tokens.nextToken().trim();
+					if (token.startsWith("<") && token.endsWith(">") && node != null) {
+						((LNode) node).addTags(token);
+					} else {
+						node = MorphologicalAnalyser.getTrie().add(token);
+						count++;
+					}
+
+
 				} catch (UnsupportedEncodingException e1) {
 					errorCount++;
 				}
@@ -329,7 +334,7 @@ public class MainWindow {
 					LNode node = allWords.get(selectedIndex);
 					textPane.setText(node.getNodeText());
 				} else if(mode == ListMode.SUFFIX) {
-					LNode node = suffixes.get(selectedIndex);
+					SNode node = suffixes.get(selectedIndex);
 					textPane.setText(node.getNodeText());
 				} 
 			}
@@ -347,20 +352,10 @@ public class MainWindow {
 		public void actionPerformed(ActionEvent e) {
 			allWords.clear();
 			allWords.addAll(MorphologicalAnalyser.getTrie().getAllWords());
+		
 		}
 	}
 	
-	private class RefreshRootWordListAction extends AbstractAction {
-		public RefreshRootWordListAction() {
-			putValue(NAME, "Refresh Root Word List");
-			putValue(SHORT_DESCRIPTION, "Some short description");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			rootWords.clear();
-			rootWords.addAll(MorphologicalAnalyser.getTrie().getAllWords());
-		}
-	}
 	
 	private class RefreshSuffixesListAction extends AbstractAction {
 		public RefreshSuffixesListAction() {
@@ -369,8 +364,13 @@ public class MainWindow {
 		}
 
 		public void actionPerformed(ActionEvent e) {
+			log.append("Filtering words");
+			LTrieFilter cg = new LTrieFilter();
+			cg.setTrie(MorphologicalAnalyser.getTrie());
+			cg.filter();
+			STrie suffixTrie = cg.getSuffixTrie();
 			suffixes.clear();
-			suffixes.addAll(MorphologicalAnalyser.getTrie().method3AshishAlgo().getAllWords());
+			suffixes.addAll(suffixTrie.getAllWords());
 			Collections.sort(suffixes);
 		}
 	}
@@ -381,81 +381,54 @@ public class MainWindow {
 			putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 
-		public void actionPerformed(ActionEvent e) {
-			File isyms = new File("D:\\FST\\isyms.txt");
-			File osysms = new File("D:\\FST\\osyms.txt");
-			File fst = new File("D:\\FST\\fst.txt");
 
+		
+		public void actionPerformed(ActionEvent e) {
+			/*JFileChooser f = new JFileChooser();
+	        f.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY); 
+	        //f.showSaveDialog(null);
+
+	        if (f.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+		        System.out.println(f.getCurrentDirectory());
+		        System.out.println(f.getSelectedFile());
+	        } else { 
+	        	System.out.println("No option selected.");
+	        }*/
+	        String directory = "../FST";
+			File isyms = new File(directory + "/mal_i.syms");
+			File osyms = new File(directory + "/mal_o.syms");
+			//File osysms = new File(directory + "/osyms.txt");
+			File fst = new File(directory + "/suffixRules.txtfst");
+			File letterfst = new File(directory + "/letters.txtfst");
+			
 			try {
-				writeFSTRules(isyms, fst);
+				HashSet<String> tags = FSTGenerator.writeFSTRules(fst, suffixes);
+				FSTGenerator.writeLettersFST(letterfst);
+				FSTGenerator.writeSymbols(isyms,osyms, tags);
+
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 			
-		}
-		private void writeFSTRules(File isyms, File fst) throws IOException {
-			if (isyms.exists()) {
-				isyms.delete();
-			}
-			if (fst.exists()) {
-				fst.delete();
-			}
-			
-			if(!isyms.createNewFile() || !fst.createNewFile()) {
-				return;
-			}
-			
-			FileWriter inputSymbols = new FileWriter(isyms);
-			FileWriter fstRules = new FileWriter(fst);
-		
+			/*Process p ;
 			try {
-				inputSymbols.append("<eps> 0\n");
-				int suffixStartState  = 2;
-				int finalState = 4;
-				int count = 5;
-				for (int i =0; i < suffixes.size(); i++, count++) {
-					inputSymbols.append("" + suffixes.get(i));
-					inputSymbols.append(" ");
-					inputSymbols.append("" + (i+1));
-					inputSymbols.append("\n");
-					
-					fstRules.append("" + suffixStartState)
-					.append(" ")
-					.append("" + count)
-					.append(" ")
-					.append(""  +suffixes.get(i))
-					.append(" ")
-					.append("null")
-					.append("\n");
-					
-					fstRules.append("" + count)
-					.append(" ")
-					.append("" + finalState)
-					.append(" ")
-					.append("<eps>")
-					.append(" ")
-					.append("<eps>")
-					.append("\n");
-					
-				}
-				
-				fstRules.append("" +finalState)
-				.append(" ")
-				.append("" +suffixStartState)
-				.append(" ")
-				.append("<eps>")
-				.append(" ")
-				.append("<eps>")
-				.append("\n");
-				
-				fstRules.append("EOF");
-				inputSymbols.append("EOF");
-			} finally {
-				fstRules.close();
-				inputSymbols.close();
+				p = Runtime.getRuntime().exec("../bin/commands.sh");
+			    p.waitFor();
+	
+			    BufferedReader reader = 
+			         new BufferedReader(new InputStreamReader(p.getInputStream()));
+	
+			    String line = "";			
+			    while ((line = reader.readLine())!= null) {
+				log.append(line + "\n");
+			    }
+			} catch (Exception e1) {
+				e1.printStackTrace();
 			}
+			log.setCaretPosition(log.getDocument().getLength());*/
+			
 		}
+		 
 	}
-	
-	
 }
+

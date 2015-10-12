@@ -2,17 +2,28 @@ package com.ashish.util;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public abstract class Trie<T extends Node> implements Iterator<T>{
-	static protected final int NUM_LETTERS = 128;
+	static public int NUM_LETTERS = 128;
 	private T root;
 	private LinkedList<T> nodesToVisit;
+	private static char rangeStart;
+	private static char rangeEnd; 
 
+	public static void setProperties(char rangeStart,char rangeEnd) {
+		Trie.rangeStart = rangeStart;
+		Trie.rangeEnd = rangeEnd;
+		NUM_LETTERS = rangeEnd -rangeStart;
+		logger.log(Level.INFO, NUM_LETTERS + " charachters supported from " + rangeStart  + " to " + rangeEnd );
+	}
+	
 	static Logger logger = LogManager.getLogManager();
 
 	public T getRoot() {
@@ -30,14 +41,14 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 	}
 
 	static protected char toLetter(int index) {
-		return (char) (index + '\u0D00');
+		return (char) (index + rangeStart);
 	}
 
 	static public int toIndex(char letter)
 			throws UnsupportedEncodingException, PunctuationException {
 		//logger.info("Got letter to convert to index: " + letter + " having int value of " + (int) letter );
-		if ((letter - '\u0D00') > 0 && (letter - '\u0D00') < 128) {
-			return letter - '\u0D00';
+		if ((letter - rangeStart) > 0 && (letter - rangeStart) < NUM_LETTERS ) {
+			return letter - rangeStart;
 		} else if (letter == '\u200D') {
 			throw new PunctuationException("Zero Width Jointer");
 		} else {
@@ -67,12 +78,48 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 		return childNode;
 	}
  
-	public abstract void add(String s) throws UnsupportedEncodingException;
-
-	public abstract Node search(String s);
-
-	public abstract List<String> print(String prefix);
-
+	public T add(String str) throws UnsupportedEncodingException {
+		// FacesContext context = FacesContext.getCurrentInstance();
+		T current = root;
+		for (int i = 0; i < str.length(); i++) {
+			int index;
+			try {
+				index = toIndex(str.charAt(i));
+			} catch (PunctuationException e) {
+				logger.info("General Punctuation found, letter skipped");
+				continue;
+			}
+			logger.info("index added " + index + " -- " + str.charAt(i));
+			if (index >= 0 && index < NUM_LETTERS) {
+				current = (T) addChild(current, index);
+			}
+		}
+		current.setEndsWord(true);
+		return current;
+	}
+	
+	public List<T> getAllWords() {
+		T current = getRoot();
+		List<T> allWords;
+		allWords = new ArrayList<T>();
+		getWordsInternal(allWords, new StringBuilder(), current);
+		Collections.sort(allWords);
+		return allWords;
+	}
+	
+	private void getWordsInternal(List<T> words, StringBuilder prefix, T node) {
+		if (node.isEndsWord()) {
+			words.add(node);
+		}
+		for (int i = 0; i < NUM_LETTERS; i++) {
+			if (node.getNthChild(i) != null) {
+				prefix.append(toLetter(i));
+				getWordsInternal(words, prefix, (T) node.getNthChild(i));
+				prefix.deleteCharAt(prefix.length() - 1);
+			}
+		}
+	}
+	
 	@Override
 	public boolean hasNext() {
 		if (!nodesToVisit.isEmpty())
@@ -100,11 +147,65 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 		throw new UnsupportedOperationException();
 	}
 
+	public Node search(String str) {
+		Node current = root;
+		try {
+			for (int i = 0; i < str.length(); i++) {
+				int index;
+				try {
+					index = toIndex(str.charAt(i));
+				} catch (PunctuationException e) {
+					continue;
+				}
+				if (current.getNthChild(index) == null) {
+					return current;
+				}
+				current = (LNode) current.getNthChild(index);
+			}
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		if (current.isEndsWord()) {
+			return current;
+		}
+		return current;
+	}
+
+	public List<String> print() {
+		Node current = getRoot();
+		List<String> allWords;
+		allWords = new ArrayList<String>();
+		print(allWords, new StringBuilder(), current);
+		return allWords;
+	}
+
+	public List<String> print(String prefix) {
+		List<String> suggestWords;
+		suggestWords = new ArrayList<String>();
+		LNode current;
+		current = (LNode) search(prefix);
+		print(suggestWords, new StringBuilder(current.getWord()), current);
+		return suggestWords;
+	}
+
+	private void print(List<String> words, StringBuilder prefix, Node node) {
+		if (node.isEndsWord() || node.getNumChildren() == 0) {
+			words.add(prefix.toString());
+		}
+		for (int i = 0; i < NUM_LETTERS; i++) {
+			if (node.getNthChild(i) != null) {
+				prefix.append(toLetter(i));
+				print(words, prefix, (LNode) node.getNthChild(i));
+				prefix.deleteCharAt(prefix.length() - 1);
+			}
+		}
+	}
 
 }
 
+
 class BranchIterator<T extends Node> implements Iterator<T> {
-	static protected final int NUM_LETTERS = 128;
+	//static protected final int NUM_LETTERS = 128;
 	private T base;
 	private LinkedList<T> nodesToVisit;
 	private LinkedList<T> branchesToVisit;
@@ -113,7 +214,7 @@ class BranchIterator<T extends Node> implements Iterator<T> {
 		super();
 		this.base = node;
 		nodesToVisit = new LinkedList<T>();
-		for (int i = 0; i < NUM_LETTERS; i++) {
+		for (int i = 0; i < Trie.NUM_LETTERS; i++) {
 			T item;
 			if ((item = (T) base.getNthChild(i)) != null)
 				nodesToVisit.addFirst(item);
@@ -151,7 +252,7 @@ class BranchIterator<T extends Node> implements Iterator<T> {
 		T current = nodesToVisit.removeFirst();
 		//System.out.print(current.getWord() + "->");
 		if(current instanceof LNode) {
-			LNode node = (LNode) current;
+			Node node = current;
 			if(node.isEndsWord()) {
 				return current;
 			}
@@ -161,7 +262,7 @@ class BranchIterator<T extends Node> implements Iterator<T> {
 			return current;
 		} else {
 //			System.out.println("c");
-			for (int i = 0; i < NUM_LETTERS; i++) {
+			for (int i = 0; i < Trie.NUM_LETTERS; i++) {
 				T item;
 				if ((item = (T) current.getNthChild(i)) != null)
 					if ((item.getLevel() - current.getLevel())<current.getLevel() )
@@ -184,7 +285,7 @@ class BranchIterator<T extends Node> implements Iterator<T> {
 }
 
 class DepthLimitedIterator<T extends Node> implements Iterator<T> {
-	static protected final int NUM_LETTERS = 128;
+	//static protected final int NUM_LETTERS = 128;
 	private T base;
 	private LinkedList<T> nodesToVisit;
 	private int depth = 0;
@@ -210,7 +311,7 @@ class DepthLimitedIterator<T extends Node> implements Iterator<T> {
 		if (hasNext()) {
 			T current = nodesToVisit.removeFirst();
 			if (current.getLevel() < depth) {
-				for (int i = 0; i < NUM_LETTERS; i++) {
+				for (int i = 0; i < Trie.NUM_LETTERS; i++) {
 					T item;
 					if ((item = (T) current.getNthChild(i)) != null)
 						nodesToVisit.addFirst(item);
@@ -228,7 +329,7 @@ class DepthLimitedIterator<T extends Node> implements Iterator<T> {
 }
 
 class NodeIterator<T extends Node> implements Iterator<T> {
-	static protected final int NUM_LETTERS = 128;
+	//static protected final int NUM_LETTERS = 128;
 	T base;
 	private LinkedList<T> nodesToVisit;
 	private boolean visiting = false;
@@ -314,7 +415,7 @@ class NodeIterator<T extends Node> implements Iterator<T> {
 		if (!visiting)
 			visiting = true;
 		while (hasNext()) {
-			LNode n = (LNode) next();
+			Node n =  next();
 			if (n.isEndsWord()) {
 				return n.getWord();
 			}
@@ -337,11 +438,13 @@ class NodeIterator<T extends Node> implements Iterator<T> {
 		return rootNodesToVisit.removeFirst().getWord();
 	}
 
+	
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	public T next() {
 		T current = nodesToVisit.removeFirst();
-		for (int i = 0; i < NUM_LETTERS; i++) {
+		for (int i = 0; i < Trie.NUM_LETTERS; i++) {
 			T item;
 			if ((item = (T) current.getNthChild(i)) != null)
 				nodesToVisit.addFirst(item);

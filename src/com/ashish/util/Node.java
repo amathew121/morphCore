@@ -22,6 +22,7 @@ public abstract class Node implements Comparable<Node> {
     private int occurrences;
     private int numChildren;
     private int level = 0;
+	protected boolean endsWord;
 
 	@Override
 	public int compareTo(Node o) {
@@ -104,6 +105,16 @@ public abstract class Node implements Comparable<Node> {
 		return level;
 	}
 
+	public boolean isEndsWord() {
+		return endsWord;
+	}
+	
+	public void setEndsWord(boolean value) {
+		if(value == true) {
+			endsWord = true;
+		}
+	}
+	
 	@Override
     public int hashCode() {
         int hash = 7;
@@ -127,6 +138,7 @@ public abstract class Node implements Comparable<Node> {
     }
    
     public abstract Node newChild(Node parent, char c);
-    
+
+  
     
 }
