@@ -148,7 +148,7 @@ public class LTrie extends Trie<LNode> {
 
 		// method1HeuristicCut(t);
 		//t.method2RootWordCut(t);
-		t.method3AshishAlgo();
+		//t.method3AshishAlgo();
 	}
 
 	public void initLexicon(String s) throws UnsupportedEncodingException {
@@ -176,7 +176,7 @@ public class LTrie extends Trie<LNode> {
 		
 	}
 	
-	public LTrie method3AshishAlgo(){
+	/*public LTrie method3AshishAlgo(){
 		StemsAndAffixes sa = new StemsAndAffixes(this);
 		LTrie suffixes = null;
 		try {
@@ -192,7 +192,7 @@ public class LTrie extends Trie<LNode> {
 		//logger.info(Msg);
 		//System.out.println(Msg);
 		return suffixes;
-	}
+	}*/
 
 	private static void method1HeuristicCut(LTrie trie)
 			throws UnsupportedEncodingException {

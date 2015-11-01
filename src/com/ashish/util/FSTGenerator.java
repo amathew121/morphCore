@@ -1,11 +1,14 @@
 package com.ashish.util;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 
 public class FSTGenerator {
 
@@ -54,8 +57,18 @@ public class FSTGenerator {
 		try {
 			for (int j = 0; j < text.length(); j++) {
 				String word = text;
-				append(inputFst, count++, count, "" + word.charAt(j),
+				if (' ' == word.charAt(j)) {
+					append(inputFst, count++, count, "<space>",
+							"<space>");
+
+				} else if ('\n' == word.charAt(j)) {
+					append(inputFst, count++, count, "<newline>",
+							"<newline>");
+
+				} else {
+					append(inputFst, count++, count, "" + word.charAt(j),
 						"" + word.charAt(j));
+				}
 				/*
 				 * inputFst.append("" + count++).append(" ").append("" +
 				 * (count)) .append(" ").append("" + word.charAt(j)).append(" ")
@@ -157,14 +170,22 @@ public class FSTGenerator {
 			return;
 		}
 
-		int count = 999;
+		int count = 20000;
 		FileWriter inputSymbols = new FileWriter(fst);
 		FileWriter outputSymbols = new FileWriter(osyms);
 		try {
 			StringBuilder sb = new StringBuilder();
 			sb.append(FSTGenerator.EPSILON).append(" ").append("0")
 					.append("\n");
-			for (int i = '\u0D00'; i <= '\u0D7F'; i++) {
+			sb.append("<space>").append(" ").append("" + count++)
+			.append("\n");
+			sb.append("<newline>").append(" ").append(""+ count++)
+			.append("\n");
+			sb.append(".").append(" ").append(""+ count++)
+			.append("\n");
+			sb.append(",").append(" ").append(""+ count++)
+			.append("\n");
+			for (int i = (int) Trie.getRangeStart(); i <= (int) Trie.getRangeEnd(); i++) {
 				sb.append((char) i).append(" ").append("" + i)
 						.append("\n");
 			}
@@ -185,7 +206,7 @@ public class FSTGenerator {
 	public static void main(String[] args) throws IOException {
 		FSTGenerator fstGenerator = new FSTGenerator();
 		fstGenerator.createInputFST(new File(
-				"/home/cryptic/projectFiles/FST/input.txtfst"), "പട്ടികൾ");
+				"/home/cryptic/projectFiles/FST/input.txtfst"), "പക്ഷികൾ പട്ടിയുടെ മാംസം തിന്നു  ");
 	}
 
 	public static void writeLettersFST(File fst) throws IOException {
@@ -200,7 +221,7 @@ public class FSTGenerator {
 		FileWriter lettersFST = new FileWriter(fst);
 		try {
 
-			for (int i = '\u0D00'; i <= '\u0D7F'; i++) {
+			for (int i = (int) Trie.getRangeStart(); i <= Trie.getRangeEnd(); i++) {
 				append(lettersFST, 0, 1, "" + (char) i, "" + (char) i);
 			}
 			append(lettersFST, 1, 0, EPSILON, EPSILON);
@@ -208,5 +229,27 @@ public class FSTGenerator {
 		} finally {
 			lettersFST.close();
 		}
+	}
+
+	public String parseOutputFile(File f) {
+		StringBuilder outputText = new StringBuilder();
+		try {
+			Scanner sc = new Scanner(f);
+			while(sc.hasNextLine()) {
+				String line = sc.nextLine();
+				System.out.println(line);
+				String split[] = line.split("\\s+");
+				System.out.println(split.length);
+
+				if (split.length == 4) {
+					outputText.append(split[3]);
+				}
+			}
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		return outputText.toString();
 	}
 }

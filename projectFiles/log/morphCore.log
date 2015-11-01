@@ -1,0 +1,6 @@
+Nov 01, 2015 11:06:14 PM com.ashish.util.LogManager getNewLogger
+INFO: ***************************************
+Nov 01, 2015 11:06:15 PM com.ashish.util.Trie setProperties
+INFO: 127 charachters supported from ഀ to ൿ
+Nov 01, 2015 11:06:15 PM com.ashish.mam.MorphologicalAnalyser main
+INFO: UTF-8

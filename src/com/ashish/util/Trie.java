@@ -17,12 +17,29 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 	private static char rangeStart;
 	private static char rangeEnd; 
 
+	public static char getRangeStart() {
+		return rangeStart;
+	}
+
+	public static void setRangeStart(char rangeStart) {
+		Trie.rangeStart = rangeStart;
+	}
+
+	public static char getRangeEnd() {
+		return rangeEnd;
+	}
+
+	public static void setRangeEnd(char rangeEnd) {
+		Trie.rangeEnd = rangeEnd;
+	}
+
 	public static void setProperties(char rangeStart,char rangeEnd) {
 		Trie.rangeStart = rangeStart;
 		Trie.rangeEnd = rangeEnd;
 		NUM_LETTERS = rangeEnd -rangeStart;
 		logger.log(Level.INFO, NUM_LETTERS + " charachters supported from " + rangeStart  + " to " + rangeEnd );
 	}
+	
 	
 	static Logger logger = LogManager.getLogManager();
 
@@ -195,7 +212,7 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 		for (int i = 0; i < NUM_LETTERS; i++) {
 			if (node.getNthChild(i) != null) {
 				prefix.append(toLetter(i));
-				print(words, prefix, (LNode) node.getNthChild(i));
+				print(words, prefix, (T) node.getNthChild(i));
 				prefix.deleteCharAt(prefix.length() - 1);
 			}
 		}

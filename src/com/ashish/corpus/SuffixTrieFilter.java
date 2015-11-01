@@ -6,26 +6,29 @@ import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.Scanner;
 
+import com.ashish.mam.MorphologicalAnalyser;
 import com.ashish.util.LNode;
 import com.ashish.util.LTrie;
 import com.ashish.util.Node;
 import com.ashish.util.PunctuationException;
+import com.ashish.util.SNode;
+import com.ashish.util.STrie;
 import com.ashish.util.Trie;
 
 public class SuffixTrieFilter {
 
-	private LTrie trie;
-	public void setTrie(LTrie trie) {
+	private STrie trie;
+	public void setTrie(STrie trie) {
 		this.trie = trie;
 		root =trie.getRoot();
 	}
 
 
-	private static LNode root;
+	private static SNode root;
 
 	public static void main(String[] args) throws FileNotFoundException {
 		SuffixTrieFilter cg = new SuffixTrieFilter();
-		LTrie trie = new LTrie();
+		STrie trie = new STrie();
 		cg.setTrie(trie);
 
 		File file = new File("D:\\projectFiles\\i2.txt");
@@ -58,7 +61,7 @@ public class SuffixTrieFilter {
 		LinkedList<Node> nodesToVisit = new LinkedList<Node>();
 		LinkedList<Node> pathNodes = new LinkedList<Node>();
 		LinkedList<Integer> pathNodesCount = new LinkedList<Integer>();
-
+		System.out.println("Filtering Suffixes ");
 		nodesToVisit.addFirst(root);
 		Node current = null;
 		boolean skipNext = false;
@@ -70,7 +73,7 @@ public class SuffixTrieFilter {
 			for (int i = 0; i <Trie.NUM_LETTERS ;i++) {
 				Node childNode = current.getNthChild(i);
 				if(childNode != null ) {
-					if (childNode.getOccurrences() <= 2 ) { 
+					if (childNode.getOccurrences() <= MorphologicalAnalyser.suffixOccThreshold ) { 
 						current.setNthChild(null, i);
 						deleteCount++;
 					} else {
@@ -79,7 +82,7 @@ public class SuffixTrieFilter {
 				}
 			}
 		} while (!nodesToVisit.isEmpty());
-		
+		System.out.println(deleteCount + " Suffixes deleted");
 	}
 
 

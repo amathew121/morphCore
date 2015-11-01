@@ -34,11 +34,12 @@ public class LTrieFilter {
 	private static LNode root;
 
 	public static void main(String[] args) throws IOException {
+		Trie.setProperties((char)2304, (char)2431);
 		LTrieFilter cg = new LTrieFilter();
 		LTrie trie = new LTrie();
 		cg.setTrie(trie);
 
-		File file = new File("/home/cryptic/projectFiles/i4.txt");
+		File file = new File("/home/cryptic/projectFiles/data/hin1");
 		cg.readFile(file);
 		cg.filter();
 		System.out.println(trie.print());
@@ -60,7 +61,7 @@ public class LTrieFilter {
 			fw.append("\n");
 		}
 		fw.close();
-
+/*
 		FileWriter fw1 = new FileWriter(output2);
 		for (LNode node : trie.method3AshishAlgo().getAllWords()) {
 			fw1.append(node.getWord());
@@ -68,7 +69,7 @@ public class LTrieFilter {
 			fw1.append("" + node.getOccurrences());
 			fw1.append("\n");
 		}
-		fw1.close();
+		fw1.close();*/
 	}
 
 	private int deleteCount = 0;
@@ -140,7 +141,6 @@ public class LTrieFilter {
 				}
 
 			} else if (current.getNumChildren() == 0) {
-
 					extractSuffixesByGoingUpThroughPath(pathNodes, current);
 			}
 
@@ -180,13 +180,16 @@ public class LTrieFilter {
 					System.out.println(suffix + " added to suffix trie");
 					SNode suffixNode = fullReturnTrie.add(suffix);
 					suffixNode.addBranch(temp.getWord());
-					for(String tag : temp.getTags()) {
-						suffixNode.addTags(tag);
+					if(current.getTags() != null) {
+						for(String tag : current.getTags()) {
+							suffixNode.addTags(tag);
+						}
 					}
 				}
 			} catch (UnsupportedEncodingException  e) {
-				// e.printStackTrace();
+				 e.printStackTrace();
 			} catch (Exception e) {
+				e.printStackTrace();
 				System.out.println("ERROR:" + temp.getWord()
 						+ " not found in " + current.getWord());
 				throw e;

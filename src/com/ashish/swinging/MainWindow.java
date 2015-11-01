@@ -76,6 +76,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
+import javax.swing.JPanel;
+import javax.swing.JButton;
 
 public class MainWindow {
 
@@ -89,10 +91,12 @@ public class MainWindow {
 	private final Action wordListAction = new RefreshWordListAction();
 	private final Action suffixListAction = new RefreshSuffixesListAction();
 	private final Action writeFSTtoFileAction = new WriteFSTtoFile();
+	private final Action testInputFile = new TestInputFile();
 
 	
-	private JTable table_1;
-	private JTable table_2;
+	private JTextPane testInputPane = new JTextPane();
+	JTextPane testOutputPane = new JTextPane();
+
 	private enum ListMode {WORD,ROOTWORD,SUFFIX};
 
 	/**
@@ -168,7 +172,21 @@ public class MainWindow {
 		suffixSelectionModel
 		.addListSelectionListener(new SharedListSelectionHandler((JTextPane)suffixSplitPane.getRightComponent(), ListMode.SUFFIX));
 
+		
+		/*
+		 *  For the third tab - TEST tab. Vertically split. Text area at the top and text box at the bottom.
+		 */
+		JSplitPane testInput = new JSplitPane();
+		tabbedPane.addTab("TEST" , null, testInput, null);
+		testInput.setOrientation(JSplitPane.VERTICAL_SPLIT);
+		
+		testInputPane.setEditable(true);
+		testInput.setLeftComponent(testInputPane);
+		
+		testInput.setRightComponent(testOutputPane);
+		testInput.setDividerLocation(150);;
 
+	
 	}
 	private JSplitPane initializeTab(String tabName, JList list, JTabbedPane tabbedPane) {
 		JSplitPane wordSplitPane = new JSplitPane();
@@ -200,14 +218,7 @@ public class MainWindow {
 		mntmFromFile.setAction(fileChoose);
 		mnAdd.add(mntmFromFile);
 
-		JMenuItem mntmInputarea = new JMenuItem("InputArea");
-		mntmInputarea.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				TextEditor myNewFrame = new TextEditor();
-				myNewFrame.setVisible(true);
-			}
-		});
-		mnAdd.add(mntmInputarea);
+		
 
 		JMenu mnSearch = new JMenu("Actions");
 		JMenuItem mntmRefreshWordList = new JMenuItem("Get All Words");
@@ -221,6 +232,10 @@ public class MainWindow {
 		JMenuItem mntmWriteFSTtoFile = new JMenuItem("Write FST rules to File");
 		mntmWriteFSTtoFile.setAction(writeFSTtoFileAction);
 		mnSearch.add(mntmWriteFSTtoFile);
+
+		JMenuItem mntmInputarea = new JMenuItem("Test input");
+		mntmInputarea.setAction(testInputFile);
+		mnSearch.add(mntmInputarea);
 		
 		JMenuItem mntmOptions = new JMenuItem("Options");
 		mnSearch.add(mntmOptions);
@@ -369,9 +384,96 @@ public class MainWindow {
 			cg.setTrie(MorphologicalAnalyser.getTrie());
 			cg.filter();
 			STrie suffixTrie = cg.getSuffixTrie();
+			SuffixTrieFilter suffixFilter = new SuffixTrieFilter();
+			suffixFilter.setTrie(suffixTrie);
+			suffixFilter.filter();
 			suffixes.clear();
 			suffixes.addAll(suffixTrie.getAllWords());
 			Collections.sort(suffixes);
+		}
+	}
+	
+	
+	private class TestInputFile extends AbstractAction {
+		public TestInputFile() {
+			putValue(NAME, "Test Input File");
+			putValue(SHORT_DESCRIPTION, "Some short description");
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			
+			StringBuilder sb = new StringBuilder();
+
+			if (testInputPane.getText() != null && !testInputPane.getText().equalsIgnoreCase(""))  {
+				sb.append(testInputPane.getText());
+			} else {
+				JFileChooser fc = new JFileChooser("D:\\");
+				fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+				fc.setMultiSelectionEnabled(false);
+				int returnVal = fc.showOpenDialog(new TextEditor());
+	
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fc.getSelectedFile();
+					// This is where a real application would open the file.
+					log.append("Reading: " + file.getName() + "." + "\n");
+					log.setCaretPosition(log.getDocument().getLength());
+	
+					try {
+						FileInputStream f = new FileInputStream(file);
+						Scanner sc = new Scanner(f, "UTF-8");
+						String line = null;
+						while (sc.hasNextLine()) {
+							sb.append(sc.nextLine());
+						}
+						
+					} catch (FileNotFoundException e1) {
+						log.append("File Not Found" + "\n");
+					}
+				} else {
+					log.append("Open command cancelled by user." + "\n");
+				}
+			}
+			try {
+				testInputPane.setText(sb.toString());
+				FSTGenerator fstGenerator = FSTGenerator.getFSTGenerator(); 
+				fstGenerator.createInputFST(new File(
+						"../in/input.txtfst"), sb.toString());
+			} catch (IOException e1) {
+				log.append("Error in reading from file." + "\n");
+			}
+			
+			Process p ;
+			try {
+				p = Runtime.getRuntime().exec("../bin/commands2.sh");
+			    p.waitFor();
+	
+			    BufferedReader reader = 
+			         new BufferedReader(new InputStreamReader(p.getInputStream()));
+	
+			    String line = "";			
+			    while ((line = reader.readLine())!= null) {
+			    	System.out.println(line);
+			    	log.append(line + "\n");
+			    }
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+
+			File f = new File ("../out/comp.txtfst");
+			String text = "";
+			if(f.exists()) {
+				FSTGenerator fstGenerator = FSTGenerator.getFSTGenerator(); 
+				text = fstGenerator.parseOutputFile(f);
+				System.out.println("Output " + text);
+			}
+			if(!f.exists() || "".equalsIgnoreCase(text)) {
+				testOutputPane.setText("No output found"); 
+			} else {
+				testOutputPane.setText(text); 
+			}
+			testInputPane.setCaretPosition(testInputPane.getDocument().getLength());
+			testOutputPane.setCaretPosition(testOutputPane.getDocument().getLength());
+			log.setCaretPosition(log.getDocument().getLength());
 		}
 	}
 	
@@ -395,8 +497,8 @@ public class MainWindow {
 	        	System.out.println("No option selected.");
 	        }*/
 	        String directory = "../FST";
-			File isyms = new File(directory + "/mal_i.syms");
-			File osyms = new File(directory + "/mal_o.syms");
+			File isyms = new File(directory + "/in.syms");
+			File osyms = new File(directory + "/out.syms");
 			//File osysms = new File(directory + "/osyms.txt");
 			File fst = new File(directory + "/suffixRules.txtfst");
 			File letterfst = new File(directory + "/letters.txtfst");
@@ -410,7 +512,7 @@ public class MainWindow {
 				e1.printStackTrace();
 			}
 			
-			/*Process p ;
+			Process p ;
 			try {
 				p = Runtime.getRuntime().exec("../bin/commands.sh");
 			    p.waitFor();
@@ -420,12 +522,13 @@ public class MainWindow {
 	
 			    String line = "";			
 			    while ((line = reader.readLine())!= null) {
-				log.append(line + "\n");
+			    	System.out.println(line);
+			    	log.append(line + "\n");
 			    }
 			} catch (Exception e1) {
 				e1.printStackTrace();
 			}
-			log.setCaretPosition(log.getDocument().getLength());*/
+			log.setCaretPosition(log.getDocument().getLength());
 			
 		}
 		 

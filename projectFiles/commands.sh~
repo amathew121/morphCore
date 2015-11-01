@@ -1,0 +1,26 @@
+mkdir -p FST/PNG
+cd FST
+echo Compiling FST
+fstcompile --isymbols=mal_i.syms --osymbols=mal_o.syms suffixRules.txtfst suffixRules.fst
+fstdraw --isymbols=mal_i.syms --osymbols=mal_o.syms suffixRules.fst suffixRules.dot
+fstcompile --isymbols=mal_i.syms --osymbols=mal_o.syms letters.txtfst letters.fst
+fstdraw --isymbols=mal_i.syms --osymbols=mal_o.syms letters.fst letters.dot
+
+echo Optimizing FST
+fstrmepsilon suffixRules.fst | fstminimize >suffixRules_opt.fst
+fstdraw --isymbols=mal_i.syms --osymbols=mal_o.syms suffixRules_opt.fst suffixRules_opt.dot
+
+echo Finalizing FST
+
+fstconcat letters.fst suffixRules_opt.fst  | fstclosure > morphCore.fst
+fstdraw --isymbols=mal_i.syms --osymbols=mal_o.syms morphCore.fst morphCore.dot
+ 
+echo Drawing FST
+
+dot -Tpng letters.dot > PNG/letters.png
+dot -Tpng suffixRules.dot > PNG/suffixRules.png
+dot -Tpng suffixRules_opt.dot > PNG/suffixRules_opt.png
+dot -Tpng morphCore.dot > PNG/morphCore.png
+
+echo Done.
+

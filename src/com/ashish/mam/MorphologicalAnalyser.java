@@ -24,6 +24,8 @@ public class MorphologicalAnalyser {
 
 	private static LTrie trie = new LTrie();
 
+	public static int suffixOccThreshold;
+
 	public static LTrie getTrie() {
 		return trie;
 	}
@@ -54,6 +56,7 @@ public class MorphologicalAnalyser {
 		    String endChar = props.getProperty("rangeEnd");
 		    char rangeStart = (char) Integer.parseInt(startChar);
 		    char rangeEnd = (char) Integer.parseInt(endChar);
+		    suffixOccThreshold = Integer.parseInt(props.getProperty("suffixOccThreshold"));
 		    Trie.setProperties(rangeStart,rangeEnd);
 		    		    
 		    System.out.print("Host name is: " + host);

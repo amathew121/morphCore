@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project morphCore with libraries in sub-folder">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <target name="create_run_jar">
+        <jar destfile="/home/cryptic/projectFiles/bin/morphCore.jar">
+            <manifest>
+                <attribute name="Main-Class" value="com.ashish.mam.MorphologicalAnalyser"/>
+                <attribute name="Class-Path" value=". morphCore_lib/commons-dbutils-1.6.jar morphCore_lib/forms-1.3.0.jar"/>
+            </manifest>
+            <fileset dir="/media/cryptic/Local Disk/NLP Workspace/morphCore/bin"/>
+        </jar>
+        <delete dir="/home/cryptic/projectFiles/bin/morphCore_lib"/>
+        <mkdir dir="/home/cryptic/projectFiles/bin/morphCore_lib"/>
+        <copy file="/media/cryptic/Local Disk/NLP Workspace/morphCore/lib/commons-dbutils-1.6.jar" todir="/home/cryptic/projectFiles/bin/morphCore_lib"/>
+        <copy file="/media/cryptic/Local Disk/NLP Workspace/morphCore/forms-1.3.0.jar" todir="/home/cryptic/projectFiles/bin/morphCore_lib"/>
+    </target>
+</project>

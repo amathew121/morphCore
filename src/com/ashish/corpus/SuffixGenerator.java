@@ -9,6 +9,7 @@ import java.util.Scanner;
 import com.ashish.util.LNode;
 import com.ashish.util.LTrie;
 import com.ashish.util.Node;
+import com.ashish.util.STrie;
 
 public class SuffixGenerator {
 
@@ -23,7 +24,7 @@ public class SuffixGenerator {
 
 	public static void main(String[] args) throws FileNotFoundException {
 		SuffixTrieFilter cg = new SuffixTrieFilter();
-		LTrie trie = new LTrie();
+		STrie trie = new STrie();
 		cg.setTrie(trie);
 
 		File file = new File("D:\\projectFiles\\i2.txt");
