@@ -6,7 +6,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.Scanner;
 
-import com.ashish.mam.MorphologicalAnalyser;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+
+import com.ashish.mam.Config;
 import com.ashish.util.LNode;
 import com.ashish.util.LTrie;
 import com.ashish.util.Node;
@@ -31,10 +33,10 @@ public class SuffixTrieFilter {
 		STrie trie = new STrie();
 		cg.setTrie(trie);
 
-		File file = new File("D:\\projectFiles\\i2.txt");
+		File file = new File("/home/cryptic/projectFiles/data/datuk.txt");
 		cg.readFile(file);
 		cg.filter();
-		System.out.println(trie.print());
+		//System.out.println(trie.print());
 		System.out.println("Words deleted" + cg.getDeleteCount());
 	}
 
@@ -67,16 +69,36 @@ public class SuffixTrieFilter {
 		boolean skipNext = false;
 		Node parent = root; 
 
+		StandardDeviation deviation = new StandardDeviation(true);
 		do {
 			current = nodesToVisit.removeFirst();
 
+			if (current.isEndsWord()) {
+				//Calculate weight by formula 1/(length * log(occ))
+				int length = current.getLevel();
+				double suffixWeight = 1/(length*Math.log10(current.getOccurrences())); 
+				System.out.println(current.getWord() + " --> " + suffixWeight);
+				if(current instanceof SNode) {
+					((SNode)current).setSuffixWeight(suffixWeight);
+				}
+				
+				//Calculate confidence by standard deviation.
+				if (Config.inflectionsIdentification) {
+					double[] values = ((SNode)current).getInflectionPattern();
+					((SNode)current).setInflectionsConfidence(deviation.evaluate(values));
+				}
+			}
 			for (int i = 0; i <Trie.NUM_LETTERS ;i++) {
 				Node childNode = current.getNthChild(i);
 				if(childNode != null ) {
-					if (childNode.getOccurrences() <= MorphologicalAnalyser.suffixOccThreshold ) { 
+					
+					if (childNode.getOccurrences() <= Config.suffixOccThreshold ) { 
 						current.setNthChild(null, i);
 						deleteCount++;
-					} else {
+					} /*else if (isStemWord(childNode)) {
+						
+					}*/ else {
+						
 						nodesToVisit.addFirst(childNode);
 					}
 				}
@@ -85,6 +107,15 @@ public class SuffixTrieFilter {
 		System.out.println(deleteCount + " Suffixes deleted");
 	}
 
+
+	private boolean isStemWord(Node childNode) {
+		SNode current;
+		if (childNode instanceof SNode) {
+			current = (SNode) childNode;
+			//FIXME
+		}
+		return false;
+	}
 
 	public int getDeleteCount() {
 		return deleteCount;

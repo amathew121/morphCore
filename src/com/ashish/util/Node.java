@@ -23,6 +23,7 @@ public abstract class Node implements Comparable<Node> {
     private int numChildren;
     private int level = 0;
 	protected boolean endsWord;
+	private char nodeChar;
 
 	@Override
 	public int compareTo(Node o) {
@@ -37,6 +38,7 @@ public abstract class Node implements Comparable<Node> {
 
     Node(Node parent, char c) {
         this.word = parent.word + c;
+        this.nodeChar = c;
         this.parent = parent;
     }
 
@@ -110,34 +112,61 @@ public abstract class Node implements Comparable<Node> {
 	}
 	
 	public void setEndsWord(boolean value) {
-		if(value == true) {
+		if(value == true) {	
 			endsWord = true;
 		}
 	}
 	
-	@Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 29 * hash + Arrays.deepHashCode(this.child);
-        return hash;
-    }
+  	@Override
+	public int hashCode() {
+		final int prime = 3;
+		int result = 1;
+		result = prime * result + level;
+		result = prime * result + nodeChar;
+		result = prime * result + numChildren;
+		result = prime * result + occurrences;
+		if (parent != null)
+		result = prime * result + parent.nodeChar  ;
+		else 
+		result = prime * result + 5  ;
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Node other = (Node) obj;
-        if (!Arrays.deepEquals(this.child, other.child)) {
-            return false;
-        }
-        return true;
-    }
-   
-    public abstract Node newChild(Node parent, char c);
+		if (result < 0) {
+			result = -result;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Node other = (Node) obj;
+		if (level != other.level)
+			return false;
+		if (nodeChar != other.nodeChar)
+			return false;
+		if (numChildren != other.numChildren)
+			return false;
+		if (occurrences != other.occurrences)
+			return false;
+		if (word == null) {
+			if (other.word != null)
+				return false;
+		} else if (!word.equals(other.word))
+			return false;
+		return true;
+	}
+
+	public abstract Node newChild(Node parent, char c);
+
+	public char getNodeChar() {
+		return nodeChar;
+	}
+
 
   
     

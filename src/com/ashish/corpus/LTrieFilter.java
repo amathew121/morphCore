@@ -5,10 +5,13 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Scanner;
 
+import com.ashish.mam.Config;
 import com.ashish.mam.MorphologicalAnalyser;
+import com.ashish.util.DepthLimitedIterator;
 import com.ashish.util.LNode;
 import com.ashish.util.LTrie;
 import com.ashish.util.Node;
@@ -20,6 +23,7 @@ import com.ashish.util.Trie;
 public class LTrieFilter {
 
 	private LTrie trie;
+	private LTrie tempTrie; 
 	private STrie fullReturnTrie = new STrie();
 
 	public void setTrie(LTrie trie) {
@@ -85,9 +89,21 @@ public class LTrieFilter {
 			}
 		}
 	}
+	
+	public void filterRecursively() {
+		int countAdded =0; 
+		int maxSteps = 0;
+		tempTrie = trie;
+		do {
+			countAdded = filter();
+			maxSteps++;
+			System.out.println("Iteration " + maxSteps + " of SuffixExtraction done.");
+		} while (countAdded == 0 || maxSteps == 5) ;
+	}
 
-	public void filter() {
-
+	public int filter() {
+		int countAdded=0;
+		
 		// for improvement, also include occurrences as a factor
 		LinkedList<LNode> nodesToVisit = new LinkedList<LNode>();
 		LinkedList<LNode> pathNodes = new LinkedList<LNode>();
@@ -141,7 +157,7 @@ public class LTrieFilter {
 				}
 
 			} else if (current.getNumChildren() == 0) {
-					extractSuffixesByGoingUpThroughPath(pathNodes, current);
+					countAdded += extractSuffixesByGoingUpThroughPath(pathNodes, current);
 			}
 
 			if (addChildren) {
@@ -158,13 +174,14 @@ public class LTrieFilter {
 		//  SuffixTrieFilter sg = new SuffixTrieFilter();
 		//  sg.setTrie(fullReturnTrie); sg.filter();
 		 
-		System.out.println();
+		System.out.println("SuffixExtraction Complete, branches identified and added " + countAdded);
+		return countAdded;
 	}
 
-	private void extractSuffixesByGoingUpThroughPath(
+	private int extractSuffixesByGoingUpThroughPath(
 			LinkedList<LNode> pathNodes, LNode current)  {
 		LinkedList<LNode> subPathNodes = new LinkedList<LNode>() ;
-		
+		int countAdded = 0; 
 		for (int i = pathNodes.size() - 1; i >= 0; i--) {
 			LNode temp = pathNodes.get(i);
 			if(temp.isEndsWord()) {
@@ -174,15 +191,30 @@ public class LTrieFilter {
 				int stemSize = temp.getWord().length();
 				int pathSize = current.getWord().length();
 				int branchSize = (pathSize - stemSize);
-				if (branchSize < stemSize) {
+				if (branchSize <= stemSize) {
 					String suffix = current.getWord().substring(
 							temp.getWord().length());
+					if(Config.stemBasedCorrection) {
+						suffix = temp.getNodeChar() + suffix;
+					}
 					System.out.println(suffix + " added to suffix trie");
 					SNode suffixNode = fullReturnTrie.add(suffix);
+					if (Config.recursiveSuffixExtraction) {
+						//FIXME: have to do.
+					}
+					countAdded++;
+					if(Config.stemBasedCorrection) {
+						suffixNode.setStartNode(fullReturnTrie.getNode("" +temp.getNodeChar() + suffix.charAt(0)));
+					}
 					suffixNode.addBranch(temp.getWord());
+					if(Config.inflectionsIdentification) {
+						searchByLevel(temp,suffixNode);
+					}
 					if(current.getTags() != null) {
 						for(String tag : current.getTags()) {
-							suffixNode.addTags(tag);
+							if(!temp.getTags().contains(tag)) {
+								suffixNode.addTags(tag);
+							}
 						}
 					}
 				}
@@ -201,6 +233,25 @@ public class LTrieFilter {
 			current = subPathNodes.removeLast();
 			extractSuffixesByGoingUpThroughPath(subPathNodes, current);
 		}
+		return countAdded; 
+	}
+	
+
+	private int searchByLevel(Node n , SNode suffixNode) {
+		int wordCount = 0;
+		DepthLimitedIterator<Node> iterator = new DepthLimitedIterator<Node>(n, n.getLevel() +4);
+		while (iterator.hasNext()) {
+			Node current = iterator.next();
+			LNode lCurrent = (LNode) current;
+			if(lCurrent.isEndsWord()) {
+				wordCount++;
+				String suffix = current.getWord().substring(
+						n.getWord().length());
+				suffixNode.addInflections(suffix);
+			}
+
+		}
+		return wordCount;
 	}
 
 	private void deleteWord(Node current, Node parent) {

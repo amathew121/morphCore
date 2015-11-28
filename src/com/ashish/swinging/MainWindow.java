@@ -11,6 +11,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -27,6 +28,9 @@ import javax.swing.AbstractAction;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
 import javax.swing.Action;
 
@@ -56,6 +60,7 @@ import com.ashish.util.FSTGenerator;
 import com.ashish.util.LNode;
 import com.ashish.util.LTrie;
 import com.ashish.util.Node;
+import com.ashish.util.PunctuationException;
 import com.ashish.util.SNode;
 import com.ashish.util.STrie;
 import com.jgoodies.forms.layout.FormLayout;
@@ -92,10 +97,12 @@ public class MainWindow {
 	private final Action suffixListAction = new RefreshSuffixesListAction();
 	private final Action writeFSTtoFileAction = new WriteFSTtoFile();
 	private final Action testInputFile = new TestInputFile();
+	private final Action openPropertiesDialog = new OpenPropertiesDialog();
 
 	
 	private JTextPane testInputPane = new JTextPane();
 	JTextPane testOutputPane = new JTextPane();
+	public STrie suffixTrie = null;
 
 	private enum ListMode {WORD,ROOTWORD,SUFFIX};
 
@@ -136,14 +143,14 @@ public class MainWindow {
 		log.setEditable(false);
 		JScrollPane logScrollPane = new JScrollPane(log);
 		frame.getContentPane().add(logScrollPane, BorderLayout.SOUTH);
-		
+
 		initializeMenuBar();
-		
+
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		frame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
 
 		final JList wordsList = new JList<>();
-		JSplitPane wordSplitPane = initializeTab("Words",wordsList, tabbedPane);
+		JSplitPane wordSplitPane = initializeTab("Words", wordsList, tabbedPane);
 		wordsList.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusGained(FocusEvent arg0) {
@@ -155,10 +162,13 @@ public class MainWindow {
 		});
 		ListSelectionModel listSelectionModel = wordsList.getSelectionModel();
 		listSelectionModel
-		.addListSelectionListener(new SharedListSelectionHandler((JTextPane)wordSplitPane.getRightComponent(), ListMode.WORD));
+				.addListSelectionListener(new SharedListSelectionHandler(
+						(JTextPane) wordSplitPane.getRightComponent(),
+						ListMode.WORD));
 
-		final JList suffixList = new JList(); 
-		JSplitPane suffixSplitPane = initializeTab("Suffixes",suffixList, tabbedPane);
+		final JList suffixList = new JList();
+		JSplitPane suffixSplitPane = initializeTab("Suffixes", suffixList,
+				tabbedPane);
 		suffixList.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusGained(FocusEvent arg0) {
@@ -168,25 +178,50 @@ public class MainWindow {
 						+ " suffixes found in trie.\n");
 			}
 		});
-		ListSelectionModel suffixSelectionModel = suffixList.getSelectionModel();
-		suffixSelectionModel
-		.addListSelectionListener(new SharedListSelectionHandler((JTextPane)suffixSplitPane.getRightComponent(), ListMode.SUFFIX));
+		suffixList.addKeyListener(new KeyAdapter() {
 
-		
+			// What to do when a key is pressed?
+			public void keyPressed(KeyEvent ke) {
+
+				// If user presses Delete key,
+				if (ke.getKeyCode() == KeyEvent.VK_DELETE) {
+					// Remove the selected item
+					suffixes.remove(suffixList.getSelectedValue());
+					try {
+						suffixTrie.removeNode(((SNode)suffixList
+								.getSelectedValue()));
+					} catch (UnsupportedEncodingException
+							| PunctuationException e) {
+						e.printStackTrace();
+					}
+					// Now set the updated vector (updated items)
+					suffixList.setListData(suffixes.toArray());
+
+				}
+			}
+		});
+		ListSelectionModel suffixSelectionModel = suffixList
+				.getSelectionModel();
+		suffixSelectionModel
+				.addListSelectionListener(new SharedListSelectionHandler(
+						(JTextPane) suffixSplitPane.getRightComponent(),
+						ListMode.SUFFIX));
+
 		/*
-		 *  For the third tab - TEST tab. Vertically split. Text area at the top and text box at the bottom.
+		 * For the third tab - TEST tab. Vertically split. Text area at the top
+		 * and text box at the bottom.
 		 */
 		JSplitPane testInput = new JSplitPane();
-		tabbedPane.addTab("TEST" , null, testInput, null);
+		tabbedPane.addTab("TEST", null, testInput, null);
 		testInput.setOrientation(JSplitPane.VERTICAL_SPLIT);
-		
+
 		testInputPane.setEditable(true);
 		testInput.setLeftComponent(testInputPane);
-		
-		testInput.setRightComponent(testOutputPane);
-		testInput.setDividerLocation(150);;
 
-	
+		testInput.setRightComponent(testOutputPane);
+		testInput.setDividerLocation(150);
+		;
+
 	}
 	private JSplitPane initializeTab(String tabName, JList list, JTabbedPane tabbedPane) {
 		JSplitPane wordSplitPane = new JSplitPane();
@@ -238,6 +273,7 @@ public class MainWindow {
 		mnSearch.add(mntmInputarea);
 		
 		JMenuItem mntmOptions = new JMenuItem("Options");
+		mntmOptions.setAction(openPropertiesDialog);
 		mnSearch.add(mntmOptions);
 
 		menuBar.add(mnSearch);
@@ -383,7 +419,7 @@ public class MainWindow {
 			LTrieFilter cg = new LTrieFilter();
 			cg.setTrie(MorphologicalAnalyser.getTrie());
 			cg.filter();
-			STrie suffixTrie = cg.getSuffixTrie();
+			suffixTrie  = cg.getSuffixTrie();
 			SuffixTrieFilter suffixFilter = new SuffixTrieFilter();
 			suffixFilter.setTrie(suffixTrie);
 			suffixFilter.filter();
@@ -393,10 +429,21 @@ public class MainWindow {
 		}
 	}
 	
+	private class OpenPropertiesDialog extends AbstractAction {
+		public OpenPropertiesDialog() {
+			putValue(NAME, "Options");
+			putValue(SHORT_DESCRIPTION, "Changes Configuration");
+		}
+		public void actionPerformed(ActionEvent e) {
+			Properties dialog = new Properties();
+			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			dialog.setVisible(true);
+		}
+	}
 	
 	private class TestInputFile extends AbstractAction {
 		public TestInputFile() {
-			putValue(NAME, "Test Input File");
+			putValue(NAME, "Test Input");
 			putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 
@@ -433,13 +480,28 @@ public class MainWindow {
 					log.append("Open command cancelled by user." + "\n");
 				}
 			}
+			testInputPane.setText(sb.toString());
+			StringTokenizer sTokenizer = new StringTokenizer(sb.toString());
+			String s = "";
+			while (sTokenizer.hasMoreTokens()) {
+				 s =s + " " + runCommands2(sTokenizer.nextToken());
+				
+			}
+			testOutputPane.setText(s);
+			testInputPane.setCaretPosition(testInputPane.getDocument().getLength());
+			testOutputPane.setCaretPosition(testOutputPane.getDocument().getLength());
+			log.setCaretPosition(log.getDocument().getLength());
+		}
+
+		private String runCommands2(String sb) {
 			try {
-				testInputPane.setText(sb.toString());
 				FSTGenerator fstGenerator = FSTGenerator.getFSTGenerator(); 
 				fstGenerator.createInputFST(new File(
 						"../in/input.txtfst"), sb.toString());
 			} catch (IOException e1) {
 				log.append("Error in reading from file." + "\n");
+			} catch (PunctuationException pe) {
+				log.append(pe.getMessage() + "\n");
 			}
 			
 			Process p ;
@@ -448,7 +510,7 @@ public class MainWindow {
 			    p.waitFor();
 	
 			    BufferedReader reader = 
-			         new BufferedReader(new InputStreamReader(p.getInputStream()));
+			         new BufferedReader(new InputStreamReader(p.getErrorStream()));
 	
 			    String line = "";			
 			    while ((line = reader.readLine())!= null) {
@@ -467,13 +529,10 @@ public class MainWindow {
 				System.out.println("Output " + text);
 			}
 			if(!f.exists() || "".equalsIgnoreCase(text)) {
-				testOutputPane.setText("No output found"); 
+				return sb;
 			} else {
-				testOutputPane.setText(text); 
+				return text; 
 			}
-			testInputPane.setCaretPosition(testInputPane.getDocument().getLength());
-			testOutputPane.setCaretPosition(testOutputPane.getDocument().getLength());
-			log.setCaretPosition(log.getDocument().getLength());
 		}
 	}
 	
@@ -504,8 +563,8 @@ public class MainWindow {
 			File letterfst = new File(directory + "/letters.txtfst");
 			
 			try {
-				HashSet<String> tags = FSTGenerator.writeFSTRules(fst, suffixes);
-				FSTGenerator.writeLettersFST(letterfst);
+				HashSet<String> tags = FSTGenerator.writeFSTRules(fst, suffixTrie, suffixes.size());
+				FSTGenerator.writeLettersFST(letterfst, suffixes.size()*10);
 				FSTGenerator.writeSymbols(isyms,osyms, tags);
 
 			} catch (IOException e1) {

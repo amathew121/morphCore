@@ -159,13 +159,28 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 		return null;
 	}
 	
+	
+	
 	@Override
 	public void remove() {
-		throw new UnsupportedOperationException();
+		// TODO Auto-generated method stub
+		
 	}
 
-	public Node search(String str) {
-		Node current = root;
+	public void removeNode(Node current) throws UnsupportedEncodingException, PunctuationException {
+		Node parent = current.getParent() ;
+		char lastChar = current.getNodeChar();
+		while ( parent != null && parent.getNumChildren() == 0 ) {
+			lastChar = parent.getNodeChar();
+			parent = parent.getParent();
+		}
+		
+		if (parent != null ) 
+		parent.setNthChild(null, Trie.toIndex(lastChar));
+	}
+
+	public T search(String str) {
+		T current = root;
 		try {
 			for (int i = 0; i < str.length(); i++) {
 				int index;
@@ -177,7 +192,7 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 				if (current.getNthChild(index) == null) {
 					return current;
 				}
-				current = (LNode) current.getNthChild(index);
+				current = (T) current.getNthChild(index);
 			}
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
@@ -186,6 +201,31 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 			return current;
 		}
 		return current;
+	}
+	
+	public T getNode(String str) {
+		T current = root;
+		int i=0;
+		try {
+			for ( i = 0; i < str.length(); i++) {
+				int index;
+				try {
+					index = toIndex(str.charAt(i));
+				} catch (PunctuationException e) {
+					return null;
+				}
+				if (current.getNthChild(index) == null) {
+					return null;
+				}
+				current = (T) current.getNthChild(index);
+			}
+		} catch (UnsupportedEncodingException e) {
+			return null;
+		}
+		if (i == str.length())
+			return current;
+		else 
+			return null;
 	}
 
 	public List<String> print() {
@@ -301,49 +341,7 @@ class BranchIterator<T extends Node> implements Iterator<T> {
 	
 }
 
-class DepthLimitedIterator<T extends Node> implements Iterator<T> {
-	//static protected final int NUM_LETTERS = 128;
-	private T base;
-	private LinkedList<T> nodesToVisit;
-	private int depth = 0;
 
-	public DepthLimitedIterator(T node, int depth) {
-		super();
-		this.base = node;
-		this.depth = depth;
-		nodesToVisit = new LinkedList<T>();
-		nodesToVisit.addFirst(base);
-	}
-	
-	@Override
-	public boolean hasNext() {
-		if (!nodesToVisit.isEmpty())
-			return true;
-		return false;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public T next() {
-		if (hasNext()) {
-			T current = nodesToVisit.removeFirst();
-			if (current.getLevel() < depth) {
-				for (int i = 0; i < Trie.NUM_LETTERS; i++) {
-					T item;
-					if ((item = (T) current.getNthChild(i)) != null)
-						nodesToVisit.addFirst(item);
-				}
-			}
-			return current;
-		}
-		return null;
-	}
-
-	@Override
-	public void remove() {
-	}
-	
-}
 
 class NodeIterator<T extends Node> implements Iterator<T> {
 	//static protected final int NUM_LETTERS = 128;

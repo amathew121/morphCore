@@ -24,8 +24,6 @@ public class MorphologicalAnalyser {
 
 	private static LTrie trie = new LTrie();
 
-	public static int suffixOccThreshold;
-
 	public static LTrie getTrie() {
 		return trie;
 	}
@@ -56,15 +54,19 @@ public class MorphologicalAnalyser {
 		    String endChar = props.getProperty("rangeEnd");
 		    char rangeStart = (char) Integer.parseInt(startChar);
 		    char rangeEnd = (char) Integer.parseInt(endChar);
-		    suffixOccThreshold = Integer.parseInt(props.getProperty("suffixOccThreshold"));
 		    Trie.setProperties(rangeStart,rangeEnd);
-		    		    
+
+		    Config.suffixOccThreshold = Integer.parseInt(props.getProperty("suffixOccThreshold"));
+		    Config.lettersMaxWeight = Integer.parseInt(props.getProperty("lettersMaxWeight"));
+		    Config.stemBasedCorrection = Boolean.parseBoolean(props.getProperty("stemBasedCorrection"));
+		    Config.recursiveSuffixExtraction = Boolean.parseBoolean(props.getProperty("recursiveSuffixExtraction"));
+
 		    System.out.print("Host name is: " + host);
 		    reader.close();
 		} catch (FileNotFoundException ex) {
-		    // file does not exist
+		    System.exit(0);
 		} catch (IOException ex) {
-		    // I/O error
+		    System.exit(0);
 		}
 		
 		System.setProperty("file.encoding", "UTF-8");
