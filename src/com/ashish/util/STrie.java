@@ -1,10 +1,7 @@
 package com.ashish.util;
 
 import java.io.UnsupportedEncodingException;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.logging.Logger;
 
 public class STrie extends Trie<SNode> {

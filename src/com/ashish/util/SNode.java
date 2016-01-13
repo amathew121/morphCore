@@ -1,6 +1,5 @@
 package com.ashish.util;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -16,6 +15,7 @@ public class SNode extends Node {
 	private double suffixWeight; 
 	private double inflectionsConfidence;
 	private SNode startNode = null;
+	private boolean dirty = false;
 	
 	public double getSuffixWeight() {
 		return suffixWeight;
@@ -39,6 +39,7 @@ public class SNode extends Node {
 		return new SNode(parent, c);
 	}
 
+	@Override
 	public char getNodeChar() {
 		return nodeChar;
 	}
@@ -108,7 +109,7 @@ public class SNode extends Node {
 		nodeText.append("Parent:\t" + this.getParent().getWord() + "\n");
 		nodeText.append("Level:\t" + this.getLevel() + "\n");
 		nodeText.append("Tags:\t" + this.getTags() + "\n");
-		//nodeText.append("Brances:\t" + this.getBranches() + "\n");
+		nodeText.append("Brances:\t" + this.getBranches() + "\n");
 		if(Config.inflectionsIdentification) {
 			nodeText.append("Inflections:\t" + this.getInflections() + "\n");
 		}
@@ -146,6 +147,14 @@ public class SNode extends Node {
 
 	public void setStartNode(SNode startNode) {
 		this.startNode = startNode;
+	}
+
+	public boolean isDirty() {
+		return dirty;
+	}
+
+	public void setDirty(boolean dirty) {
+		this.dirty = dirty;
 	}
 
 

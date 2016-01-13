@@ -3,25 +3,17 @@ package com.ashish.util;
 import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
-import org.apache.commons.dbutils.BeanProcessor;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
-import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
-
-import com.ashish.corpus.SuffixTrieFilter;
 
 public class LTrie extends Trie<LNode> {
 
@@ -45,8 +37,8 @@ public class LTrie extends Trie<LNode> {
 			current.cutWordProbability = calculateProbability(current);
 		}
 		if (isRootForm) {
-			((LNode) child).rootWord = true;
-			((LNode) child).incNumRootChildren();
+			child.rootWord = true;
+			child.incNumRootChildren();
 			// context.addMessage(null, new FacesMessage("Successful",
 			// "Added as Root Word" + str));
 		}

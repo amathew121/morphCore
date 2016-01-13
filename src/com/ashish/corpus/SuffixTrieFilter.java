@@ -9,10 +9,7 @@ import java.util.Scanner;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 
 import com.ashish.mam.Config;
-import com.ashish.util.LNode;
-import com.ashish.util.LTrie;
 import com.ashish.util.Node;
-import com.ashish.util.PunctuationException;
 import com.ashish.util.SNode;
 import com.ashish.util.STrie;
 import com.ashish.util.Trie;
@@ -94,6 +91,7 @@ public class SuffixTrieFilter {
 					
 					if (childNode.getOccurrences() <= Config.suffixOccThreshold ) { 
 						current.setNthChild(null, i);
+						current.decNumChildren();
 						deleteCount++;
 					} /*else if (isStemWord(childNode)) {
 						

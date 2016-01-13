@@ -2,10 +2,8 @@ package com.ashish.util;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.List;
@@ -61,9 +59,7 @@ public class FSTGenerator {
 			for (int j = 0; j < text.length(); j++) {
 				String word = text;
 				char letter = word.charAt(j);
-				if (letter  < Trie.getRangeStart()  || letter > Trie.getRangeEnd() || letter == '\u200D') {
-					throw new PunctuationException("Zero Width Jointer/UnsupportedChar");
-				} 
+
 				if (' ' == word.charAt(j)) {
 					append(inputFst, count++, count, "<space>",
 							"<space>");
@@ -73,6 +69,10 @@ public class FSTGenerator {
 							"<newline>");
 
 				} else {
+					if (letter  < Trie.getRangeStart()  || letter > Trie.getRangeEnd() || letter == '\u200D') {
+						//throw new PunctuationException("Zero Width Jointer / Unsupported Char");
+						continue;
+					} 
 					append(inputFst, count++, count, "" + word.charAt(j),
 						"" + word.charAt(j));
 				}
@@ -95,7 +95,7 @@ public class FSTGenerator {
 	}
 	public static void append(Writer fileWriter, int start, int end, String in,
 			String out, double weight) throws IOException {
-		int normalizedWeight = (int) (weight*5);
+		int normalizedWeight = (int) (weight);
 		fileWriter.append("" + start).append(" ").append("" + end).append(" ")
 				.append("" + in).append(" ").append(out).append(" ")
 				.append("" + normalizedWeight).append("\n");
@@ -250,15 +250,15 @@ public class FSTGenerator {
 				if(current.isEndsWord()) {
 					boolean taggedSuffix = false; 
 					for (String tag : current.getTags()) {
-						double tagWeight = 1/ Math.log10(current.getTagCount(tag));
+						double tagWeight = 1/ Math.log10(2*current.getTagCount(tag));
 								append(fstRules, B, finalState, ""
 								+ EPSILON, tag,(current.getSuffixWeight() + tagWeight) *50);
 						tags.add(tag);
 						taggedSuffix = true;
 					}
 					if(!taggedSuffix) {
-					append(fstRules, B,
-							finalState, EPSILON, EPSILON, current.getSuffixWeight()*100);
+						append(fstRules, B, finalState, EPSILON, EPSILON, current.getSuffixWeight()*100);
+						System.out.println(current.getWord() + "      " + current.getSuffixWeight() );
 					}
 					if(Config.stemBasedCorrection) {
 						SNode  reEntryNode = suffixes.getNode(current.getNodeChar() + "");
@@ -317,7 +317,7 @@ public class FSTGenerator {
 			.append("\n");
 			sb.append("+").append(" ").append(""+ count++)
 			.append("\n");
-			for (int i = (int) Trie.getRangeStart(); i <= (int) Trie.getRangeEnd(); i++) {
+			for (int i = Trie.getRangeStart(); i <= Trie.getRangeEnd(); i++) {
 				sb.append((char) i).append(" ").append("" + i)
 						.append("\n");
 			}
@@ -353,10 +353,10 @@ public class FSTGenerator {
 		FileWriter lettersFST = new FileWriter(fst);
 		try {
 
-			for (int i = (int) Trie.getRangeStart(); i <= Trie.getRangeEnd(); i++) {
+			for (int i = Trie.getRangeStart(); i <= Trie.getRangeEnd(); i++) {
 				append(lettersFST, 0, 0, "" + (char) i, "" + (char) i, Config.lettersMaxWeight);
 			}
-			append(lettersFST, 0, 0, EPSILON, EPSILON, Config.lettersMaxWeight);
+			//append(lettersFST, 0, 0, EPSILON, EPSILON, Config.lettersMaxWeight);
 			lettersFST.append("" + 0);
 		} finally {
 			lettersFST.close();
@@ -374,7 +374,17 @@ public class FSTGenerator {
 				System.out.println(split.length);
 
 				if (split.length == 4 || split.length == 5) {
-					outputText.append(split[3]);
+					if("<space>".equalsIgnoreCase(split[3].trim())) {
+						if(Config.newlineSeperator) {
+							outputText.append("\n");
+						} else  {
+							outputText.append(" ");
+						}
+					} else if("<newline>".equalsIgnoreCase(split[3].trim())) {
+						outputText.append("\n");
+					} else {
+						outputText.append(split[3]);
+					}
 				}
 			}
 			

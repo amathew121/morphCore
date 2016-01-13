@@ -7,4 +7,5 @@ public class Config {
 	public static boolean stemBasedCorrection;
 	public static boolean recursiveSuffixExtraction;
 	public static boolean inflectionsIdentification;
+	public static boolean newlineSeperator = true;
 }

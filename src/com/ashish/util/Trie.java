@@ -3,7 +3,6 @@ package com.ashish.util;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EmptyStackException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -63,7 +62,7 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 
 	static public int toIndex(char letter)
 			throws UnsupportedEncodingException, PunctuationException {
-		//logger.info("Got letter to convert to index: " + letter + " having int value of " + (int) letter );
+		logger.finest("Got letter to convert to index: " + letter + " having int value of " + (int) letter );
 		if ((letter - rangeStart) > 0 && (letter - rangeStart) < NUM_LETTERS ) {
 			return letter - rangeStart;
 		} else if (letter == '\u200D') {
@@ -91,6 +90,9 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 		}
 		Node childNode = node.getNthChild(index);
 		childNode.incOccurrences();
+		if (node instanceof SNode) {
+			((SNode)node).setDirty(false);
+		}
 		//System.out.println(childNode.getWord() + ":\t" + childNode.getOccurrences());
 		return childNode;
 	}
@@ -103,10 +105,10 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 			try {
 				index = toIndex(str.charAt(i));
 			} catch (PunctuationException e) {
-				logger.info("General Punctuation found, letter skipped");
+				logger.warning("General Punctuation found, letter skipped");
 				continue;
 			}
-			logger.info("index added " + index + " -- " + str.charAt(i));
+			logger.fine("index added " + index + " -- " + str.charAt(i));
 			if (index >= 0 && index < NUM_LETTERS) {
 				current = (T) addChild(current, index);
 			}
@@ -252,7 +254,7 @@ public abstract class Trie<T extends Node> implements Iterator<T>{
 		for (int i = 0; i < NUM_LETTERS; i++) {
 			if (node.getNthChild(i) != null) {
 				prefix.append(toLetter(i));
-				print(words, prefix, (T) node.getNthChild(i));
+				print(words, prefix, node.getNthChild(i));
 				prefix.deleteCharAt(prefix.length() - 1);
 			}
 		}

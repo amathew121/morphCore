@@ -7,8 +7,6 @@ import javax.swing.JTextArea;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
 
 import javax.swing.JDialog;
@@ -17,29 +15,21 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-
-import java.awt.FlowLayout;
-
-import javax.swing.BoxLayout;
-import javax.swing.JToolBar;
+import javax.swing.SwingConstants;
+import javax.swing.WindowConstants;
 import javax.swing.AbstractAction;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 
 import javax.swing.Action;
 
-import java.awt.Panel;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -50,24 +40,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 import java.util.StringTokenizer;
+import java.util.logging.Logger;
 
-import javax.swing.JInternalFrame;
-
-import com.ashish.corpus.LTrieFilter;
+import com.ashish.corpus.RecursiveSuffixFilterAndExtractor;
+import com.ashish.corpus.SuffixExtractor;
 import com.ashish.corpus.SuffixTrieFilter;
+import com.ashish.mam.Config;
 import com.ashish.mam.MorphologicalAnalyser;
 import com.ashish.util.FSTGenerator;
 import com.ashish.util.LNode;
-import com.ashish.util.LTrie;
 import com.ashish.util.Node;
 import com.ashish.util.PunctuationException;
 import com.ashish.util.SNode;
 import com.ashish.util.STrie;
-import com.jgoodies.forms.layout.FormLayout;
-import com.jgoodies.forms.layout.ColumnSpec;
-import com.jgoodies.forms.layout.RowSpec;
 
-import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JList;
@@ -78,11 +64,6 @@ import java.awt.event.FocusEvent;
 import javax.swing.JSplitPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableModel;
-import javax.swing.JPanel;
-import javax.swing.JButton;
 
 public class MainWindow {
 
@@ -111,6 +92,7 @@ public class MainWindow {
 	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
+			@Override
 			public void run() {
 				try {
 					MainWindow window = new MainWindow();
@@ -146,7 +128,7 @@ public class MainWindow {
 
 		initializeMenuBar();
 
-		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		JTabbedPane tabbedPane = new JTabbedPane(SwingConstants.TOP);
 		frame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
 
 		final JList wordsList = new JList<>();
@@ -181,6 +163,7 @@ public class MainWindow {
 		suffixList.addKeyListener(new KeyAdapter() {
 
 			// What to do when a key is pressed?
+			@Override
 			public void keyPressed(KeyEvent ke) {
 
 				// If user presses Delete key,
@@ -288,6 +271,7 @@ public class MainWindow {
 			putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 
+		@Override
 		public void actionPerformed(ActionEvent e) {
 			JFileChooser fc = new JFileChooser("D:\\");
 			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -357,6 +341,7 @@ public class MainWindow {
 			this.mode = mode;
 		}
 
+		@Override
 		public void valueChanged(ListSelectionEvent e) {
 			ListSelectionModel lsm = (ListSelectionModel) e.getSource();
 			int selectedIndex = -1;
@@ -400,6 +385,7 @@ public class MainWindow {
 			putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 
+		@Override
 		public void actionPerformed(ActionEvent e) {
 			allWords.clear();
 			allWords.addAll(MorphologicalAnalyser.getTrie().getAllWords());
@@ -414,12 +400,18 @@ public class MainWindow {
 			putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 
+		@Override
 		public void actionPerformed(ActionEvent e) {
 			log.append("Filtering words");
-			LTrieFilter cg = new LTrieFilter();
+			SuffixExtractor cg = new SuffixExtractor();
 			cg.setTrie(MorphologicalAnalyser.getTrie());
-			cg.filter();
+			cg.extractSuffixes();
 			suffixTrie  = cg.getSuffixTrie();
+			if (Config.recursiveSuffixExtraction) {
+				RecursiveSuffixFilterAndExtractor recursiveExtractor = new RecursiveSuffixFilterAndExtractor();
+				recursiveExtractor.setTrie(suffixTrie);
+				recursiveExtractor.filterRecursively();
+			}
 			SuffixTrieFilter suffixFilter = new SuffixTrieFilter();
 			suffixFilter.setTrie(suffixTrie);
 			suffixFilter.filter();
@@ -434,9 +426,10 @@ public class MainWindow {
 			putValue(NAME, "Options");
 			putValue(SHORT_DESCRIPTION, "Changes Configuration");
 		}
+		@Override
 		public void actionPerformed(ActionEvent e) {
 			Properties dialog = new Properties();
-			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 			dialog.setVisible(true);
 		}
 	}
@@ -447,10 +440,11 @@ public class MainWindow {
 			putValue(SHORT_DESCRIPTION, "Some short description");
 		}
 
+		@Override
 		public void actionPerformed(ActionEvent e) {
 			
 			StringBuilder sb = new StringBuilder();
-
+			String inputFileName = null;
 			if (testInputPane.getText() != null && !testInputPane.getText().equalsIgnoreCase(""))  {
 				sb.append(testInputPane.getText());
 			} else {
@@ -458,10 +452,10 @@ public class MainWindow {
 				fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 				fc.setMultiSelectionEnabled(false);
 				int returnVal = fc.showOpenDialog(new TextEditor());
-	
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
 					// This is where a real application would open the file.
+					inputFileName = file.getName();
 					log.append("Reading: " + file.getName() + "." + "\n");
 					log.setCaretPosition(log.getDocument().getLength());
 	
@@ -480,16 +474,39 @@ public class MainWindow {
 					log.append("Open command cancelled by user." + "\n");
 				}
 			}
-			testInputPane.setText(sb.toString());
-			StringTokenizer sTokenizer = new StringTokenizer(sb.toString());
-			String s = "";
-			while (sTokenizer.hasMoreTokens()) {
-				 s =s + " " + runCommands2(sTokenizer.nextToken());
+			if (sb.length() > 0 ) {
+				testInputPane.setText(sb.toString());
+				/*StringTokenizer sTokenizer = new StringTokenizer(sb.toString());
+				String s = "";
+				while (sTokenizer.hasMoreTokens()) {
+					 s =s + " " + runCommands2(sTokenizer.nextToken());
+					
+				}*/
+				String s =runCommands2(sb.toString());
+				File outputFile  = new File("../out/" + inputFileName + "_out.txt");
+				FileWriter fw = null;
+				try { 
+					fw = new FileWriter(outputFile);
+					fw.append(s);
+				} catch(Exception ex){
+					ex.printStackTrace();
+					String msg = "Unable to write to output file";
+					System.out.println(msg);
+					log.append(msg + "\n");
+				} finally {
+					if(fw != null)
+						try {
+							fw.close();
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+				}
 				
+				
+				testOutputPane.setText(s);
+				testInputPane.setCaretPosition(testInputPane.getDocument().getLength());
+				testOutputPane.setCaretPosition(testOutputPane.getDocument().getLength());
 			}
-			testOutputPane.setText(s);
-			testInputPane.setCaretPosition(testInputPane.getDocument().getLength());
-			testOutputPane.setCaretPosition(testOutputPane.getDocument().getLength());
 			log.setCaretPosition(log.getDocument().getLength());
 		}
 
@@ -544,6 +561,7 @@ public class MainWindow {
 
 
 		
+		@Override
 		public void actionPerformed(ActionEvent e) {
 			/*JFileChooser f = new JFileChooser();
 	        f.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY); 

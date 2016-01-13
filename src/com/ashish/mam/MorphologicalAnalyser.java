@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import javax.swing.UIManager;
 
 import com.ashish.swinging.MainWindow;
+import com.ashish.util.InputFileProcessor;
 import com.ashish.util.LTrie;
 import com.ashish.util.LogManager;
 import com.ashish.util.Trie;
@@ -61,7 +62,7 @@ public class MorphologicalAnalyser {
 		    Config.stemBasedCorrection = Boolean.parseBoolean(props.getProperty("stemBasedCorrection"));
 		    Config.recursiveSuffixExtraction = Boolean.parseBoolean(props.getProperty("recursiveSuffixExtraction"));
 
-		    System.out.print("Host name is: " + host);
+		    System.out.print("recursiveSuffixExtraction name is: " + Config.recursiveSuffixExtraction);
 		    reader.close();
 		} catch (FileNotFoundException ex) {
 		    System.exit(0);
@@ -71,9 +72,10 @@ public class MorphologicalAnalyser {
 		
 		System.setProperty("file.encoding", "UTF-8");
 		logger.info(System.getProperty("file.encoding"));
-		Font font = new Font("Arial Unicode MS", Font.BOLD,12);
+		Font font = new Font("Arial Unicode MS", Font.PLAIN,20);
 		setGlobalFont(font);
 		EventQueue.invokeLater(new Runnable() {
+			@Override
 			public void run() {
 				try {
 					MainWindow window = new MainWindow();
@@ -83,5 +85,8 @@ public class MorphologicalAnalyser {
 				}
 			}
 		});
+		
+		InputFileProcessor inputProcessor = new InputFileProcessor();
+		inputProcessor.start();
 	}
 }

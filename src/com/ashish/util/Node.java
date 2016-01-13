@@ -6,9 +6,6 @@ package com.ashish.util;
 
 import static com.ashish.util.Trie.NUM_LETTERS;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 /**
  *
  * @author Ashish
@@ -78,6 +75,12 @@ public abstract class Node implements Comparable<Node> {
     public void incNumChildren() {
         this.numChildren++;
     }
+    public void decNumChildren() {
+    	this.numChildren--;
+    	if(this.numChildren ==0) {
+    		this.endsWord = true;
+    	}
+    }
 
     public boolean isVisited() {
 		return visited;
@@ -126,7 +129,7 @@ public abstract class Node implements Comparable<Node> {
 		result = prime * result + numChildren;
 		result = prime * result + occurrences;
 		if (parent != null)
-		result = prime * result + parent.nodeChar  ;
+		result = prime * result + parent.word.hashCode()  ;
 		else 
 		result = prime * result + 5  ;
 

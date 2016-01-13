@@ -6,6 +6,7 @@ import java.awt.FlowLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
+import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -19,6 +20,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.Action;
 
 import com.ashish.mam.Config;
+
 import javax.swing.JToggleButton;
 
 public class Properties extends JDialog {
@@ -26,7 +28,7 @@ public class Properties extends JDialog {
 	private final JPanel contentPanel = new JPanel();
 	private JTextField txtOccthreshold;
 	private JTextField txtLettersWeight;
-	private JToggleButton tglbtnStembiascorrection;
+	private JToggleButton tglbtnRecursiveSuffixExtraction;
 	private final Action action = new SwingAction();
 	private final Action cancel = new CancelAction();
 
@@ -36,7 +38,7 @@ public class Properties extends JDialog {
 	public static void main(String[] args) {
 		try {
 			Properties dialog = new Properties();
-			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 			dialog.setVisible(true);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -73,12 +75,13 @@ public class Properties extends JDialog {
 			txtLettersWeight.setColumns(10);
 		}
 		{
-			JLabel lblStemBiasCorrection = new JLabel("Stem Bias Correction");
-			contentPanel.add(lblStemBiasCorrection);
+			JLabel lblRecursiveSuffixExtraction = new JLabel("Recursive Suffix Extraction");
+			contentPanel.add(lblRecursiveSuffixExtraction);
 		}
 		{
-			tglbtnStembiascorrection = new JToggleButton("stemBiasCorrection");
-			contentPanel.add(tglbtnStembiascorrection);
+			tglbtnRecursiveSuffixExtraction = new JToggleButton("recursiveSuffixExtraction");
+			tglbtnRecursiveSuffixExtraction.setSelected(Config.recursiveSuffixExtraction);
+			contentPanel.add(tglbtnRecursiveSuffixExtraction);
 		}
 		{
 			JLabel label = new JLabel("");
@@ -113,10 +116,11 @@ public class Properties extends JDialog {
 			putValue(NAME, "OK");
 			putValue(SHORT_DESCRIPTION, "Changes Configuration");
 		}
+		@Override
 		public void actionPerformed(ActionEvent e) {
 		    Config.suffixOccThreshold = Integer.parseInt(txtOccthreshold.getText());
 		    Config.lettersMaxWeight = Integer.parseInt(txtLettersWeight.getText());
-		    tglbtnStembiascorrection.getSelectedIcon();
+		    Config.recursiveSuffixExtraction  = tglbtnRecursiveSuffixExtraction.isSelected();
 		    dispose();
 		}
 	}
@@ -126,6 +130,7 @@ public class Properties extends JDialog {
 			putValue(NAME, "Cancel");
 			putValue(SHORT_DESCRIPTION, "Cancel changes");
 		}
+		@Override
 		public void actionPerformed(ActionEvent e) {
 		    dispose();
 		}

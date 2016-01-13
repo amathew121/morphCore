@@ -28,6 +28,7 @@ public class LNode extends Node {
 		return new LNode(parent, c);
 	}
 
+	@Override
 	public char getNodeChar() {
 		return nodeChar;
 	}
@@ -40,6 +41,7 @@ public class LNode extends Node {
 		numRootChildren++;
 	}
 	
+	@Override
 	public void setEndsWord(boolean value) {
 		if(value == true) {
 			endsWord = true;

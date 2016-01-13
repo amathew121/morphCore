@@ -107,7 +107,7 @@ public class StemsAndAffixes {
 				 System.out.println(node.getWord());
 				 if (node.getWord() != null) {
 					 try {
-						 fstGenerator.append(lemmaFSTWriter, 0, count, FSTGenerator.EPSILON, FSTGenerator.EPSILON);
+						 FSTGenerator.append(lemmaFSTWriter, 0, count, FSTGenerator.EPSILON, FSTGenerator.EPSILON);
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();

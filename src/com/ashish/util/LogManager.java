@@ -2,6 +2,7 @@ package com.ashish.util;
 
 import java.io.IOException;
 import java.util.logging.FileHandler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
@@ -25,6 +26,7 @@ public class LogManager {
 	        // This block configure the logger with handler and formatter  
 	        fh = new FileHandler("../log/morphCore.log");  
 	        fh.setEncoding("UTF-8");
+	        fh.setLevel(Level.INFO);
 	        logger.addHandler(fh);
 	        logger.setUseParentHandlers(false);
 	        SimpleFormatter formatter = new SimpleFormatter();  

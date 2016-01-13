@@ -8,12 +8,9 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JEditorPane;
 
-import java.awt.GridLayout;
-
 import javax.swing.JTextPane;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
-import javax.swing.JTextField;
 import javax.swing.JMenuItem;
 import javax.swing.AbstractAction;
 
@@ -24,7 +21,6 @@ import java.util.StringTokenizer;
 import javax.swing.Action;
 
 import com.ashish.mam.MorphologicalAnalyser;
-import com.ashish.util.Trie;
 
 public class TextEditor extends JFrame {
 
@@ -38,6 +34,7 @@ public class TextEditor extends JFrame {
 	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
+			@Override
 			public void run() {
 				try {
 					TextEditor frame = new TextEditor();
@@ -87,6 +84,7 @@ public class TextEditor extends JFrame {
 			putValue(NAME, "Save");
 			putValue(SHORT_DESCRIPTION, "Adds the words to Trie");
 		}
+		@Override
 		public void actionPerformed(ActionEvent e) {
 			String textToBeAdded = editorPane.getText();
 			addTextInTrie(textToBeAdded);
